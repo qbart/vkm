@@ -9,4 +9,5 @@
 #include "quaternion.hpp"
 #include "transform.hpp"
 #include "common.hpp"
+#include "pack.hpp"
 #include "detail/layout.hpp"
