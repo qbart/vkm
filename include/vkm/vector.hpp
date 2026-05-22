@@ -36,6 +36,12 @@ struct alignas(2 * sizeof(T)) vector<T, 2> {
     constexpr vector(T x_, T y_) : x(x_), y(y_) {}
     [[nodiscard]] constexpr T& operator[](int i) { return i == 0 ? x : y; }
     [[nodiscard]] constexpr const T& operator[](int i) const { return i == 0 ? x : y; }
+    // Swizzles. Generic: v.swizzle<1,0>(); named: v.yx().
+    template <int... I>
+    [[nodiscard]] constexpr vector<T, static_cast<int>(sizeof...(I))> swizzle() const {
+        return vector<T, static_cast<int>(sizeof...(I))>{(*this)[I]...};
+    }
+    [[nodiscard]] constexpr vector<T, 2> yx() const { return {y, x}; }
     static constexpr int size = 2;
     using value_type = T;
 };
@@ -49,6 +55,14 @@ struct vector<T, 3> {
     constexpr vector(vector<T, 2> xy, T z_) : x(xy.x), y(xy.y), z(z_) {}
     [[nodiscard]] constexpr T& operator[](int i) { return i == 0 ? x : i == 1 ? y : z; }
     [[nodiscard]] constexpr const T& operator[](int i) const { return i == 0 ? x : i == 1 ? y : z; }
+    // Swizzles. Generic: v.swizzle<2,1,0>(); named: v.xy(), v.xz(), v.yz().
+    template <int... I>
+    [[nodiscard]] constexpr vector<T, static_cast<int>(sizeof...(I))> swizzle() const {
+        return vector<T, static_cast<int>(sizeof...(I))>{(*this)[I]...};
+    }
+    [[nodiscard]] constexpr vector<T, 2> xy() const { return {x, y}; }
+    [[nodiscard]] constexpr vector<T, 2> xz() const { return {x, z}; }
+    [[nodiscard]] constexpr vector<T, 2> yz() const { return {y, z}; }
     static constexpr int size = 3;
     using value_type = T;
 };
@@ -63,6 +77,18 @@ struct alignas(4 * sizeof(T)) vector<T, 4> {
     constexpr vector(vector<T, 2> xy, T z_, T w_) : x(xy.x), y(xy.y), z(z_), w(w_) {}
     [[nodiscard]] constexpr T& operator[](int i) { return i == 0 ? x : i == 1 ? y : i == 2 ? z : w; }
     [[nodiscard]] constexpr const T& operator[](int i) const { return i == 0 ? x : i == 1 ? y : i == 2 ? z : w; }
+    // Swizzles. Generic: v.swizzle<2,1,0>(); named: v.xyz() (drop w), v.xy(), rgb aliases.
+    template <int... I>
+    [[nodiscard]] constexpr vector<T, static_cast<int>(sizeof...(I))> swizzle() const {
+        return vector<T, static_cast<int>(sizeof...(I))>{(*this)[I]...};
+    }
+    [[nodiscard]] constexpr vector<T, 3> xyz() const { return {x, y, z}; }
+    [[nodiscard]] constexpr vector<T, 2> xy() const { return {x, y}; }
+    [[nodiscard]] constexpr vector<T, 2> xz() const { return {x, z}; }
+    [[nodiscard]] constexpr vector<T, 2> yz() const { return {y, z}; }
+    [[nodiscard]] constexpr vector<T, 2> zw() const { return {z, w}; }
+    [[nodiscard]] constexpr vector<T, 3> rgb() const { return {x, y, z}; }
+    [[nodiscard]] constexpr vector<T, 2> rg() const { return {x, y}; }
     static constexpr int size = 4;
     using value_type = T;
 };
@@ -197,6 +223,12 @@ template <class T, int N>
 template <class T, int N>
 [[nodiscard]] vector<T, N> normalize(vector<T, N> v) {
     return v * (T{1} / length(v));
+}
+
+// Free-function swizzle: swizzle<2,1,0>(v) == v.swizzle<2,1,0>().
+template <int... I, class T, int N>
+[[nodiscard]] constexpr vector<T, static_cast<int>(sizeof...(I))> swizzle(vector<T, N> v) {
+    return v.template swizzle<I...>();
 }
 
 } // namespace vkm

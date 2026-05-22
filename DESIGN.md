@@ -77,7 +77,9 @@ whole API is constexpr. `float3` SIMD (padded load) and wider types come later.
    `perspective`/`ortho` with Vulkan depth [0,1] + Y-flip baked in. Tested.
 4. ✅ `detail/layout.hpp`: `std140<T>`/`std430<T>` wrappers, arrays, and
    `std140_align_v`/`std430_align_v` traits; offsets static-asserted vs the spec.
-5. ⏳ `common.hpp` (clamp/lerp/saturate/min/max/floor/...), swizzles.
-6. matrix `inverse`/`determinant` + normal matrix (inverse-transpose).
+5. ✅ Swizzles (`v.xyz()` / `v.swizzle<...>()`, function-style to keep
+   standard-layout + constexpr) and `common.hpp` (min/max/clamp/saturate/lerp/
+   step/smoothstep/abs/sign/reflect/distance + cmath wrappers). Tested.
+6. ⏳ matrix `inverse`/`determinant` + normal matrix (inverse-transpose).
 7. Wider SIMD (float3, double via AVX, half), benchmarks vs GLM.
 ```
