@@ -211,7 +211,7 @@ template <class T>
 }
 
 template <class T, int N>
-[[nodiscard]] constexpr T length_squared(vector<T, N> v) {
+[[nodiscard]] constexpr T length2(vector<T, N> v) { // squared magnitude (no sqrt)
     return dot(v, v);
 }
 

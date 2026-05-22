@@ -40,6 +40,7 @@ static_assert(max(float3{1, 5, 3}, 4.0f) == float3{4, 5, 4});
 static_assert(abs(float3{-1, 2, -3}) == float3{1, 2, 3});
 static_assert(step(0.5f, 0.75f) == 1.0f);
 static_assert(reflect(float3{1, -1, 0}, float3{0, 1, 0}) == float3{1, 1, 0}); // bounce off floor
+static_assert(distance2(float3{0, 0, 0}, float3{0, 3, 4}) == 25.0f);          // 5^2, no sqrt
 
 int main() {
     // Runtime cmath-backed functions.

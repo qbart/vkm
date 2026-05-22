@@ -140,6 +140,11 @@ template <class T, int N>
 }
 template <class T, int N>
 [[nodiscard]] T distance(vector<T, N> a, vector<T, N> b) { return length(a - b); }
+// Squared distance: no sqrt, so it's constexpr and cheaper for comparisons.
+template <class T, int N>
+[[nodiscard]] constexpr T distance2(vector<T, N> a, vector<T, N> b) {
+    return length2(a - b);
+}
 
 // ---- <cmath> wrappers (runtime) -----------------------------------------------
 

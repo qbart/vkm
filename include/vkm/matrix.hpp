@@ -76,6 +76,9 @@ using double2x2 = matrix<double, 2, 2>;
 using double3x3 = matrix<double, 3, 3>;
 using double4x4 = matrix<double, 4, 4>;
 
+// GLSL-style convenience alias.
+using mat4 = float4x4;
+
 // ---- linear algebra -----------------------------------------------------------
 
 // M * v: linear combination of columns. For float4x4*float4 this is float4

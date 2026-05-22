@@ -26,7 +26,7 @@ int main() {
     print("cross(a, b) =", cross(a, b));
     print("dot(a, b) =", dot(a, b));
     print("length(a)            (mag)", length(a));
-    print("length_squared(a) (mag^2)", length_squared(a)); // no sqrt — cheaper for comparisons
+    print("length2(a)        (mag^2)", length2(a)); // no sqrt — cheaper for comparisons
     print("normalize(a) =", normalize(a));
 
     // ---- 3. Rotate a vector by a 30-degree quaternion about +Z --------------
