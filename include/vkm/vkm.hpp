@@ -8,4 +8,5 @@
 #include "matrix.hpp"
 #include "quaternion.hpp"
 #include "transform.hpp"
+#include "detail/layout.hpp"
 // common.hpp — added as we build it.

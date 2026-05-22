@@ -75,8 +75,9 @@ whole API is constexpr. `float3` SIMD (padded load) and wider types come later.
 2. ✅ `matrix<T,R,C>` (column-major, M*v), mul/transpose/identity, tests.
 3. ✅ `quat` + `transform`: translate/scale/rotate/look_at/compose_trs, and
    `perspective`/`ortho` with Vulkan depth [0,1] + Y-flip baked in. Tested.
-4. ⏳ `common.hpp` (clamp/lerp/saturate/min/max/floor/...), swizzles.
-5. `detail/layout.hpp`: `std140<T>` / `std430<T>` wrappers; static-assert struct
-   offsets against the GLSL/Slang rules.
-6. Wider SIMD (float3, double via AVX, half), benchmarks vs GLM.
+4. ✅ `detail/layout.hpp`: `std140<T>`/`std430<T>` wrappers, arrays, and
+   `std140_align_v`/`std430_align_v` traits; offsets static-asserted vs the spec.
+5. ⏳ `common.hpp` (clamp/lerp/saturate/min/max/floor/...), swizzles.
+6. matrix `inverse`/`determinant` + normal matrix (inverse-transpose).
+7. Wider SIMD (float3, double via AVX, half), benchmarks vs GLM.
 ```

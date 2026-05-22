@@ -12,7 +12,7 @@ target_compile_features(vkm INTERFACE cxx_std_23)
 # Tests are built only when vkm is the top-level project.
 if(PROJECT_IS_TOP_LEVEL)
     enable_testing()
-    foreach(t vector matrix transform)
+    foreach(t vector matrix transform layout)
         add_executable(test_${t} tests/test_${t}.cpp)
         target_link_libraries(test_${t} PRIVATE vkm)
         target_compile_options(test_${t} PRIVATE -O2 -Wall -Wextra)
