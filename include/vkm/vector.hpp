@@ -188,6 +188,19 @@ using ivec2 = int2;     using ivec3 = int3;     using ivec4 = int4;
 using uvec2 = uint2;    using uvec3 = uint3;    using uvec4 = uint4;
 using bvec2 = bool2;    using bvec3 = bool3;    using bvec4 = bool4;
 
+// ---- world-space direction constants ------------------------------------------
+// vkm world space is right-handed and Y-up, with forward = -Z: that is the
+// direction a camera built by look_at faces, and matches GLM/OpenGL world
+// conventions. Vulkan's Y-down only lives in clip space (baked into the
+// projection builders), not here. NB: this differs from Unity, which is
+// left-handed with forward = +Z.
+inline constexpr float3 right{1, 0, 0};
+inline constexpr float3 left{-1, 0, 0};
+inline constexpr float3 up{0, 1, 0};
+inline constexpr float3 down{0, -1, 0};
+inline constexpr float3 forward{0, 0, -1};
+inline constexpr float3 back{0, 0, 1};
+
 // ---- generic component-wise arithmetic ---------------------------------------
 
 #define VKM_VEC_BINOP(op)                                                          \

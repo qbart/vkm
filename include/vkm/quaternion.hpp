@@ -45,6 +45,15 @@ struct quat {
         float inv = 1.0f / (x * x + y * y + z * z + w * w);
         return {-x * inv, -y * inv, -z * inv, w * inv};
     }
+    quat& Invert() { return *this = Inverse(); } // in place
+    [[nodiscard]] quat Normalized() const {      // unit copy
+        float inv = 1.0f / Len();
+        return {x * inv, y * inv, z * inv, w * inv};
+    }
+    // Mutating Unity-style setters (Unity's instance methods). Defined out-of-line
+    // below, after the free builders they delegate to.
+    quat& SetFromToRotation(float3 from_direction, float3 to_direction);
+    quat& SetLookRotation(float3 view, float3 up_hint = up);
     [[nodiscard]] float* Ptr() { return &x; }
     [[nodiscard]] const float* Ptr() const { return &x; }
 };
@@ -136,6 +145,90 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
                     float4{r[1], 0.0f},
                     float4{r[2], 0.0f},
                     float4{0, 0, 0, 1}};
+}
+
+// Rotation matrix -> unit quaternion (inverse of to_float3x3). Shepperd's method:
+// build from whichever diagonal term is largest, for numerical stability.
+[[nodiscard]] inline quat to_quat(float3x3 m) {
+    // Column-major: m[c][r] is the element at row r, column c.
+    float m00 = m[0][0], m11 = m[1][1], m22 = m[2][2];
+    float trace = m00 + m11 + m22;
+    if (trace > 0.0f) {
+        float s = std::sqrt(trace + 1.0f) * 2.0f; // 4*w
+        return {(m[1][2] - m[2][1]) / s, (m[2][0] - m[0][2]) / s,
+                (m[0][1] - m[1][0]) / s, 0.25f * s};
+    } else if (m00 > m11 && m00 > m22) {
+        float s = std::sqrt(1.0f + m00 - m11 - m22) * 2.0f; // 4*x
+        return {0.25f * s, (m[1][0] + m[0][1]) / s,
+                (m[2][0] + m[0][2]) / s, (m[1][2] - m[2][1]) / s};
+    } else if (m11 > m22) {
+        float s = std::sqrt(1.0f + m11 - m00 - m22) * 2.0f; // 4*y
+        return {(m[1][0] + m[0][1]) / s, 0.25f * s,
+                (m[2][1] + m[1][2]) / s, (m[2][0] - m[0][2]) / s};
+    } else {
+        float s = std::sqrt(1.0f + m22 - m00 - m11) * 2.0f; // 4*z
+        return {(m[2][0] + m[0][2]) / s, (m[2][1] + m[1][2]) / s,
+                0.25f * s, (m[0][1] - m[1][0]) / s};
+    }
+}
+
+// ---- Unity-style queries / construction (radians) -----------------------------
+
+// Angular difference between two unit rotations, in RADIANS, range [0, pi].
+// (Unity Quaternion.Angle, but radians.) Measured from the relative rotation via
+// atan2, which stays accurate near 0 and pi where 2*acos(|dot|) loses precision.
+[[nodiscard]] inline float angle(quat a, quat b) {
+    quat r = conjugate(a) * b;                          // relative rotation (a assumed unit)
+    float im = std::sqrt(r.x * r.x + r.y * r.y + r.z * r.z); // |sin(theta/2)|
+    return 2.0f * std::atan2(im, std::fabs(r.w));
+}
+
+// Shortest-arc rotation taking direction `from` onto direction `to` (neither need
+// be unit). (Unity Quaternion.FromToRotation.)
+[[nodiscard]] inline quat from_to_rotation(float3 from, float3 to) {
+    float3 f = normalize(from);
+    float3 t = normalize(to);
+    float d = dot(f, t);
+    if (d >= 1.0f - 1e-6f) return quat::identity(); // already aligned
+    if (d <= -1.0f + 1e-6f) {                        // opposite: 180° about any ⟂ axis
+        float3 axis = cross(right, f);
+        if (length2(axis) < 1e-6f) axis = cross(up, f);
+        axis = normalize(axis);
+        return {axis.x, axis.y, axis.z, 0.0f}; // 180° -> w = cos(90°) = 0
+    }
+    float3 c = cross(f, t);
+    float s = std::sqrt((1.0f + d) * 2.0f);
+    float inv = 1.0f / s;
+    return normalize(quat{c.x * inv, c.y * inv, c.z * inv, s * 0.5f});
+}
+
+// Rotation whose forward (local -Z, vkm::forward) points along `forward`, with
+// local up aligned as closely as possible to `up_hint`. RH / Y-up — see the
+// direction constants in vector.hpp. (Unity Quaternion.LookRotation; Unity is
+// left-handed with +Z forward, so its result differs by that convention.)
+[[nodiscard]] inline quat look_rotation(float3 forward, float3 up_hint = up) {
+    float3 f = normalize(forward);
+    float3 r = normalize(cross(f, up_hint)); // right
+    float3 u = cross(r, f);                  // re-orthogonalized up
+    // Columns map local +X,+Y,+Z to world. Local -Z is forward, so column 2
+    // (image of local +Z) is -f.
+    return to_quat(float3x3{r, u, -f});
+}
+
+// Rotate quaternion `from` toward `to` by at most max_radians_delta; snaps to
+// `to` once within reach. (Unity Quaternion.RotateTowards, but radians.)
+[[nodiscard]] inline quat rotate_towards(quat from, quat to, float max_radians_delta) {
+    float a = angle(from, to);
+    if (a < 1e-6f) return to;
+    float t = max_radians_delta / a;
+    return t >= 1.0f ? to : slerp(from, to, t);
+}
+
+inline quat& quat::SetFromToRotation(float3 from_direction, float3 to_direction) {
+    return *this = from_to_rotation(from_direction, to_direction);
+}
+inline quat& quat::SetLookRotation(float3 view, float3 up_hint) {
+    return *this = look_rotation(view, up_hint);
 }
 
 } // namespace vkm
