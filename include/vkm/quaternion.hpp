@@ -50,6 +50,40 @@ struct quat {
     return {q.x * inv, q.y * inv, q.z * inv, q.w * inv};
 }
 
+// ---- interpolation ------------------------------------------------------------
+// Raw lerp does NOT preserve unit length, so it's rarely what you want for a
+// rotation on its own. Reach for nlerp (cheap; great for blending close
+// orientations) or slerp (constant angular velocity; correct for wide arcs).
+
+// Component-wise linear interpolation (unnormalized).
+[[nodiscard]] constexpr quat lerp(quat a, quat b, float t) {
+    return {a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t,
+            a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t};
+}
+
+// Normalized lerp. Picks the shortest arc (flips b if the dot is negative).
+[[nodiscard]] inline quat nlerp(quat a, quat b, float t) {
+    if (dot(a, b) < 0.0f) b = {-b.x, -b.y, -b.z, -b.w};
+    return normalize(lerp(a, b, t));
+}
+
+// Spherical linear interpolation: constant angular velocity along the shortest
+// arc. Falls back to nlerp when the inputs are nearly parallel (sin θ → 0).
+[[nodiscard]] inline quat slerp(quat a, quat b, float t) {
+    float cos_theta = dot(a, b);
+    if (cos_theta < 0.0f) { // shortest path
+        b = {-b.x, -b.y, -b.z, -b.w};
+        cos_theta = -cos_theta;
+    }
+    if (cos_theta > 0.9995f) return nlerp(a, b, t); // avoid division by ~0
+    float theta = std::acos(cos_theta);
+    float inv_sin = 1.0f / std::sin(theta);
+    float wa = std::sin((1.0f - t) * theta) * inv_sin;
+    float wb = std::sin(t * theta) * inv_sin;
+    return {wa * a.x + wb * b.x, wa * a.y + wb * b.y,
+            wa * a.z + wb * b.z, wa * a.w + wb * b.w};
+}
+
 // Rotate a vector by a unit quaternion (optimized; no matrix needed):
 //   t = 2 * cross(q.xyz, v);  v' = v + q.w*t + cross(q.xyz, t)
 [[nodiscard]] constexpr float3 rotate(quat q, float3 v) {

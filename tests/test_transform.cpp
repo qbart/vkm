@@ -30,6 +30,17 @@ int main() {
     // Composition order: q*q = 180 deg about Z maps +X -> -X.
     CHECK(near(rotate(qz * qz, float3{1, 0, 0}), float3{-1, 0, 0}));
 
+    // --- quaternion interpolation ---
+    // halfway between identity and a 90deg-about-Z rotation is a 45deg rotation.
+    quat half = slerp(quat::identity(), qz, 0.5f);
+    float s = 0.70710678f; // sin(45) = cos(45)
+    CHECK(near(rotate(half, float3{1, 0, 0}), float3{s, s, 0}));
+    // endpoints are exact.
+    CHECK(near(rotate(slerp(quat::identity(), qz, 0.0f), float3{1, 0, 0}), float3{1, 0, 0}));
+    CHECK(near(rotate(slerp(quat::identity(), qz, 1.0f), float3{1, 0, 0}), float3{0, 1, 0}));
+    // nlerp lands near the same place at the midpoint (close orientations).
+    CHECK(near(rotate(nlerp(quat::identity(), qz, 0.5f), float3{1, 0, 0}), float3{s, s, 0}));
+
     // --- affine ---
     CHECK(near(translate(float3{10, 20, 30}) * float4{1, 2, 3, 1}, float4{11, 22, 33, 1}));
     CHECK(near(scale(float3{2, 3, 4}) * float4{1, 1, 1, 1}, float4{2, 3, 4, 1}));
