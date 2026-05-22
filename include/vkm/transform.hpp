@@ -9,6 +9,7 @@
 //     The Y-down flip is baked into the projection builders (proj[1][1] *= -1),
 //     so a vkm projection is upload-and-go for a default Vulkan viewport.
 //
+#include "common.hpp"
 #include "matrix.hpp"
 #include "quaternion.hpp"
 #include "vector.hpp"
@@ -19,8 +20,21 @@ namespace vkm {
 
 inline constexpr float pi = 3.14159265358979323846f;
 
-[[nodiscard]] constexpr float radians(float degrees) { return degrees * (pi / 180.0f); }
-[[nodiscard]] constexpr float degrees(float radians) { return radians * (180.0f / pi); }
+[[nodiscard]] constexpr float rad(float degrees) { return degrees * (pi / 180.0f); }
+[[nodiscard]] constexpr float deg(float radians) { return radians * (180.0f / pi); }
+
+// Angle literals: `90.0_deg` / `1.5_rad`, all yielding radians as float so
+// signatures stay plain `float` (mirrors Slang/HLSL, which has no angle type).
+// `inline namespace` so they resolve unqualified inside vkm; outside, opt in
+// with `using namespace vkm::literals;` — literal operators are NOT found by
+// ADL, so the suffix is invisible without it. Integer and floating overloads
+// are separate: a floating UDL won't match `90_deg`, only `90.0_deg`.
+inline namespace literals {
+[[nodiscard]] constexpr float operator""_deg(long double d) { return rad(static_cast<float>(d)); }
+[[nodiscard]] constexpr float operator""_deg(unsigned long long d) { return rad(static_cast<float>(d)); }
+[[nodiscard]] constexpr float operator""_rad(long double r) { return static_cast<float>(r); }
+[[nodiscard]] constexpr float operator""_rad(unsigned long long r) { return static_cast<float>(r); }
+} // namespace literals
 
 // ---- affine builders ----------------------------------------------------------
 
@@ -46,6 +60,44 @@ inline constexpr float pi = 3.14159265358979323846f;
 // Convenience: T * R * S (scale, then rotate, then translate).
 [[nodiscard]] inline float4x4 compose_trs(float3 t, quat r, float3 s) {
     return translate(t) * to_float4x4(r) * scale(s);
+}
+
+// ---- vector rotation helper ---------------------------------------------------
+
+// Rotate `current` toward `target`: its direction turns by at most
+// max_radians_delta, and its length moves toward |target| by at most
+// max_magnitude_delta. Both are clamped against overshoot. (Unity RotateTowards.)
+[[nodiscard]] inline float3 rotate_towards(float3 current, float3 target,
+                                           float max_radians_delta, float max_magnitude_delta) {
+    constexpr float eps = 1e-20f;
+    float len_c = length(current);
+    float len_t = length(target);
+    float new_len = move_towards(len_c, len_t, max_magnitude_delta); // step the magnitude
+
+    // A (near-)zero endpoint has no direction to rotate; keep whatever axis exists.
+    if (len_c < eps || len_t < eps) {
+        float3 dir = len_c >= eps   ? current / len_c
+                     : len_t >= eps ? target / len_t
+                                    : float3{0, 0, 0};
+        return dir * new_len;
+    }
+
+    float3 dc = current / len_c;
+    float3 dt = target / len_t;
+    float theta = std::acos(clamp(dot(dc, dt), -1.0f, 1.0f)); // angle between dirs, [0, pi]
+    if (theta < eps) return dc * new_len;                     // already aligned
+
+    float turn = min(max_radians_delta, theta); // don't overshoot target dir
+    float3 axis = cross(dc, dt);
+    float axis_len = length(axis);
+    if (axis_len < eps) {
+        // antiparallel (theta ~ pi): cross is degenerate, pick any perpendicular axis.
+        float3 ref = abs(dc.x) < 0.9f ? float3{1, 0, 0} : float3{0, 1, 0};
+        axis = normalize(cross(dc, ref));
+    } else {
+        axis = axis / axis_len;
+    }
+    return rotate(quat::from_axis_angle(axis, turn), dc) * new_len;
 }
 
 // ---- view ---------------------------------------------------------------------

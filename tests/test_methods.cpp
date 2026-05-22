@@ -62,7 +62,7 @@ int main() {
     CHECK((b == float4{6, 6, 6, 6}));
 
     // ---- quat ----
-    quat q = quat::from_axis_angle(float3{0, 0, 1}, radians(90));
+    quat q = quat::from_axis_angle(float3{0, 0, 1}, rad(90));
     CHECK(near(q.Len(), 1.0f));
     // q * inverse(q) is the identity rotation.
     CHECK(near(rotate(q * q.Inverse(), float3{1, 0, 0}), float3{1, 0, 0}));

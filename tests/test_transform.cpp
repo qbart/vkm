@@ -24,7 +24,7 @@ static bool near(float4 a, float4 b) {
 
 int main() {
     // --- quaternion: 90 deg about +Z maps +X -> +Y ---
-    quat qz = quat::from_axis_angle(float3{0, 0, 1}, radians(90));
+    quat qz = quat::from_axis_angle(float3{0, 0, 1}, rad(90));
     CHECK(near(rotate(qz, float3{1, 0, 0}), float3{0, 1, 0}));         // optimized rotate
     CHECK(near(to_float4x4(qz) * float4{1, 0, 0, 1}, float4{0, 1, 0, 1})); // via matrix
     // Composition order: q*q = 180 deg about Z maps +X -> -X.
@@ -52,7 +52,7 @@ int main() {
 
     // --- perspective: Vulkan depth [0,1] ---
     float n = 0.1f, f = 100.0f;
-    float4x4 P = perspective(radians(60), 16.0f / 9.0f, n, f);
+    float4x4 P = perspective(rad(60), 16.0f / 9.0f, n, f);
     float4 cnear = P * float4{0, 0, -n, 1}; // point on near plane
     float4 cfar = P * float4{0, 0, -f, 1};  // point on far plane
     CHECK(near(cnear.z / cnear.w, 0.0f));   // near -> 0

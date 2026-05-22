@@ -58,7 +58,7 @@ int main() {
 
     // 4x4 inverse of a full TRS round-trips.
     float4x4 M = compose_trs(float3{3, -2, 5},
-                             quat::from_axis_angle(float3{0.3f, 1, 0.5f}, radians(40)),
+                             quat::from_axis_angle(float3{0.3f, 1, 0.5f}, rad(40)),
                              float3{2, 0.5f, 1.5f});
     CHECK(near(inverse(M) * M, float4x4::identity()));
     CHECK(near(M * inverse(M), float4x4::identity()));
@@ -68,7 +68,7 @@ int main() {
     CHECK(near(inverse(V) * float4{0, 0, 0, 1}, float4{1, 2, 3, 1})); // camera-space origin -> eye
 
     // normal matrix of a pure rotation equals that rotation's 3x3 (orthonormal).
-    quat r = quat::from_axis_angle(float3{0, 1, 0}, radians(33));
+    quat r = quat::from_axis_angle(float3{0, 1, 0}, rad(33));
     float4x4 R = to_float4x4(r);
     CHECK(near(normal_matrix(R), to_float3x3(r)));
 
