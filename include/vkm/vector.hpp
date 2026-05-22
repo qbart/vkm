@@ -24,11 +24,12 @@ using uint = std::uint32_t; // Slang's `uint`
 template <class T, int N>
 struct vector;
 
-// Forward-declared so the in-place member normalize() can delegate to the free
-// (copy-returning) normalize() below: since they share a name, the member body
-// must qualify the call (vkm::normalize), and qualified lookup needs it visible here.
-template <class T, int N>
-[[nodiscard]] vector<T, N> normalize(vector<T, N> v);
+// Forward-declared so the members length()/length2()/normalize() can delegate to
+// the free forms below: member and free share a name, so the bodies qualify the
+// call (vkm::length, ...) and qualified lookup needs the names visible here.
+template <class T, int N> [[nodiscard]] constexpr T length2(vector<T, N> v);
+template <class T, int N> [[nodiscard]] T length(vector<T, N> v);
+template <class T, int N> [[nodiscard]] vector<T, N> normalize(vector<T, N> v);
 
 // ---- storage specializations -------------------------------------------------
 // Each holds its components directly. operator[] uses a switch so it stays valid
@@ -49,8 +50,8 @@ struct alignas(2 * sizeof(T)) vector<T, 2> {
     }
     [[nodiscard]] constexpr vector<T, 2> yx() const { return {y, x}; }
     // Member-style API (camelCase, fluent). Free-function forms also exist.
-    [[nodiscard]] T len() const { return length(*this); }              // magnitude
-    [[nodiscard]] constexpr T len2() const { return length2(*this); }  // magnitude squared
+    [[nodiscard]] T length() const { return vkm::length(*this); }              // magnitude
+    [[nodiscard]] constexpr T length2() const { return vkm::length2(*this); }  // magnitude squared
     vector& normalize() { return *this = vkm::normalize(*this); }           // in place
     [[nodiscard]] vector normalized() const { return vkm::normalize(*this); }
     [[nodiscard]] constexpr vector reflected(vector n) const { return *this - n * (T{2} * dot(*this, n)); }
@@ -93,8 +94,8 @@ struct vector<T, 3> {
     [[nodiscard]] constexpr vector<T, 2> xz() const { return {x, z}; }
     [[nodiscard]] constexpr vector<T, 2> yz() const { return {y, z}; }
     // Member-style API (camelCase, fluent). Free-function forms also exist.
-    [[nodiscard]] T len() const { return length(*this); }              // magnitude
-    [[nodiscard]] constexpr T len2() const { return length2(*this); }  // magnitude squared
+    [[nodiscard]] T length() const { return vkm::length(*this); }              // magnitude
+    [[nodiscard]] constexpr T length2() const { return vkm::length2(*this); }  // magnitude squared
     vector& normalize() { return *this = vkm::normalize(*this); }           // in place
     [[nodiscard]] vector normalized() const { return vkm::normalize(*this); }
     [[nodiscard]] constexpr vector reflected(vector n) const { return *this - n * (T{2} * dot(*this, n)); }
@@ -142,8 +143,8 @@ struct alignas(4 * sizeof(T)) vector<T, 4> {
     [[nodiscard]] constexpr vector<T, 3> rgb() const { return {x, y, z}; }
     [[nodiscard]] constexpr vector<T, 2> rg() const { return {x, y}; }
     // Member-style API (camelCase, fluent). Free-function forms also exist.
-    [[nodiscard]] T len() const { return length(*this); }              // magnitude
-    [[nodiscard]] constexpr T len2() const { return length2(*this); }  // magnitude squared
+    [[nodiscard]] T length() const { return vkm::length(*this); }              // magnitude
+    [[nodiscard]] constexpr T length2() const { return vkm::length2(*this); }  // magnitude squared
     vector& normalize() { return *this = vkm::normalize(*this); }           // in place
     [[nodiscard]] vector normalized() const { return vkm::normalize(*this); }
     [[nodiscard]] constexpr vector reflected(vector n) const { return *this - n * (T{2} * dot(*this, n)); }

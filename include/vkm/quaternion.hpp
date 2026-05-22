@@ -34,9 +34,9 @@ struct quat {
 
     // Member-style API (camelCase, fluent). Implemented directly so the type stays
     // self-contained; free-function forms also exist.
-    [[nodiscard]] float len() const { return std::sqrt(x * x + y * y + z * z + w * w); }
+    [[nodiscard]] float length() const { return std::sqrt(x * x + y * y + z * z + w * w); }
     quat& normalize() { // in place
-        float inv = 1.0f / len();
+        float inv = 1.0f / length();
         x *= inv; y *= inv; z *= inv; w *= inv;
         return *this;
     }
@@ -47,7 +47,7 @@ struct quat {
     }
     quat& invert() { return *this = inverse(); } // in place
     [[nodiscard]] quat normalized() const {      // unit copy
-        float inv = 1.0f / len();
+        float inv = 1.0f / length();
         return {x * inv, y * inv, z * inv, w * inv};
     }
     // Mutating Unity-style setters (Unity's instance methods). Defined out-of-line

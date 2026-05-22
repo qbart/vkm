@@ -91,7 +91,7 @@ int main() {
         quat qi = q;
         qi.invert();
         CHECK(near(qi, q.inverse()));            // in-place matches the copy form
-        CHECK(near(quat{1, 2, 3, 4}.normalized().len(), 1.0f)); // non-unit -> unit copy
+        CHECK(near(quat{1, 2, 3, 4}.normalized().length(), 1.0f)); // non-unit -> unit copy
     }
 
     if (g_failures == 0) {

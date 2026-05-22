@@ -27,7 +27,7 @@ static bool near(const float4x4& a, const float4x4& b) {
 
 // ---- compile-time: vector members + compound ops are constexpr ---------------
 
-static_assert(float3{0, 3, 4}.len2() == 25.0f);
+static_assert(float3{0, 3, 4}.length2() == 25.0f);
 static_assert(float3{-1, 2, -3}.abs() == float3{1, 2, 3});
 static_assert(float3{5, -1, 0.5f}.saturated() == float3{1, 0, 0.5f});
 static_assert(float3{5, -1, 3}.clamped(0.0f, 2.0f) == float3{2, 0, 2});
@@ -39,7 +39,7 @@ static_assert(quat{1, 2, 3, 4}.conjugate() == quat{-1, -2, -3, 4});
 int main() {
     // ---- vector ----
     float3 v{0, 3, 4};
-    CHECK(near(v.len(), 5.0f));
+    CHECK(near(v.length(), 5.0f));
     CHECK(near(v.normalized(), float3{0, 0.6f, 0.8f}));
     CHECK(near(v, float3{0, 3, 4})); // normalized() did not mutate
 
@@ -63,7 +63,7 @@ int main() {
 
     // ---- quat ----
     quat q = quat::fromAxisAngle(float3{0, 0, 1}, rad(90));
-    CHECK(near(q.len(), 1.0f));
+    CHECK(near(q.length(), 1.0f));
     // q * inverse(q) is the identity rotation.
     CHECK(near(rotate(q * q.inverse(), float3{1, 0, 0}), float3{1, 0, 0}));
     // For a unit quaternion, conjugate() == inverse().

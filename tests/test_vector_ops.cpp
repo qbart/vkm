@@ -51,7 +51,7 @@ int main() {
     CHECK(near(moveTowards(float3{0, 0, 0}, float3{10, 0, 0}, 100.0f), float3{10, 0, 0})); // clamp
 
     // ---- rotateTowards ----
-    // enough angular budget -> snap onto target direction (lengths equal -> len stays 1)
+    // enough angular budget -> snap onto target direction (lengths equal -> length stays 1)
     CHECK(near(rotateTowards(float3{1, 0, 0}, float3{0, 1, 0}, pi, 0.0f), float3{0, 1, 0}));
     // partial 45-degree turn within the plane, unit length preserved
     CHECK(near(rotateTowards(float3{1, 0, 0}, float3{0, 1, 0}, pi / 4, 0.0f),
