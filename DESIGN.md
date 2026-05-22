@@ -37,10 +37,12 @@ include/vkm/
   `&v.x` is a contiguous array and the type drops straight into GPU buffers.
   `operator[]` uses a switch to stay valid in constant expressions.
 
-### Matrix convention — DECISION PENDING
+### Matrix convention — DECIDED: column-major + M*v
 
-Recommended default: **column-major storage + column-vector math**
-(`v' = M * v`, compose right-to-left `M = P * V * Model`).
+**Column-major storage + column-vector math** (`v' = M * v`, compose
+right-to-left `M = P * V * Model`). Verified: `float4x4` is 64 bytes / 16-aligned
+with the translation in the last column, so it memcpy's into a UBO mat4 directly.
+Indexing: `m[c]` is a column (vector<T,R>); `m[r, c]` is an element (C++23).
 
 - Matches Vulkan/SPIR-V's default column-major layout → upload a UBO matrix with
   a plain `memcpy`, no transpose.
@@ -70,9 +72,10 @@ whole API is constexpr. `float3` SIMD (padded load) and wider types come later.
 ## Roadmap
 
 1. ✅ Project skeleton, SIMD backend, `vector<T,N>` (+ float4 SIMD), tests.
-2. ⏳ `matrix<T,R,C>` once the matrix convention is confirmed.
-3. `quat`, then `transform` (Vulkan-clip projections, look_at, TRS).
-4. `common.hpp` (clamp/lerp/saturate/min/max/floor/...), swizzles.
+2. ✅ `matrix<T,R,C>` (column-major, M*v), mul/transpose/identity, tests.
+3. ✅ `quat` + `transform`: translate/scale/rotate/look_at/compose_trs, and
+   `perspective`/`ortho` with Vulkan depth [0,1] + Y-flip baked in. Tested.
+4. ⏳ `common.hpp` (clamp/lerp/saturate/min/max/floor/...), swizzles.
 5. `detail/layout.hpp`: `std140<T>` / `std430<T>` wrappers; static-assert struct
    offsets against the GLSL/Slang rules.
 6. Wider SIMD (float3, double via AVX, half), benchmarks vs GLM.

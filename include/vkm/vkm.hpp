@@ -5,4 +5,7 @@
 // Single include for the whole library.
 //
 #include "vector.hpp"
-// matrix.hpp, quaternion.hpp, transform.hpp, common.hpp — added as we build them.
+#include "matrix.hpp"
+#include "quaternion.hpp"
+#include "transform.hpp"
+// common.hpp — added as we build it.
