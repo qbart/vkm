@@ -27,28 +27,28 @@ static bool near(const float4x4& a, const float4x4& b) {
 
 // ---- compile-time: vector members + compound ops are constexpr ---------------
 
-static_assert(float3{0, 3, 4}.Len2() == 25.0f);
-static_assert(float3{-1, 2, -3}.Abs() == float3{1, 2, 3});
-static_assert(float3{5, -1, 0.5f}.Saturated() == float3{1, 0, 0.5f});
-static_assert(float3{5, -1, 3}.Clamped(0.0f, 2.0f) == float3{2, 0, 2});
-static_assert(float3{1, -1, 0}.Reflected(float3{0, 1, 0}) == float3{1, 1, 0});
+static_assert(float3{0, 3, 4}.len2() == 25.0f);
+static_assert(float3{-1, 2, -3}.abs() == float3{1, 2, 3});
+static_assert(float3{5, -1, 0.5f}.saturated() == float3{1, 0, 0.5f});
+static_assert(float3{5, -1, 3}.clamped(0.0f, 2.0f) == float3{2, 0, 2});
+static_assert(float3{1, -1, 0}.reflected(float3{0, 1, 0}) == float3{1, 1, 0});
 static_assert([] { float3 v{1, 2, 3}; v += float3{1, 1, 1}; return v; }() == float3{2, 3, 4});
 static_assert([] { float4 v{1, 2, 3, 4}; v *= 2.0f; return v; }() == float4{2, 4, 6, 8});
-static_assert(quat{1, 2, 3, 4}.Conjugate() == quat{-1, -2, -3, 4});
+static_assert(quat{1, 2, 3, 4}.conjugate() == quat{-1, -2, -3, 4});
 
 int main() {
     // ---- vector ----
     float3 v{0, 3, 4};
-    CHECK(near(v.Len(), 5.0f));
-    CHECK(near(v.Normalized(), float3{0, 0.6f, 0.8f}));
-    CHECK(near(v, float3{0, 3, 4})); // Normalized() did not mutate
+    CHECK(near(v.len(), 5.0f));
+    CHECK(near(v.normalized(), float3{0, 0.6f, 0.8f}));
+    CHECK(near(v, float3{0, 3, 4})); // normalized() did not mutate
 
     float3 n{0, 0, 2};
-    n.Normalize(); // mutates
+    n.normalize(); // mutates
     CHECK(near(n, float3{0, 0, 1}));
 
     float3 p{1, 2, 3};
-    CHECK(p.Ptr()[0] == 1 && p.Ptr()[1] == 2 && p.Ptr()[2] == 3); // contiguous
+    CHECK(p.ptr()[0] == 1 && p.ptr()[1] == 2 && p.ptr()[2] == 3); // contiguous
 
     float4 a{1, 2, 3, 4};
     a += float4{10, 10, 10, 10};
@@ -62,34 +62,34 @@ int main() {
     CHECK((b == float4{6, 6, 6, 6}));
 
     // ---- quat ----
-    quat q = quat::from_axis_angle(float3{0, 0, 1}, rad(90));
-    CHECK(near(q.Len(), 1.0f));
+    quat q = quat::fromAxisAngle(float3{0, 0, 1}, rad(90));
+    CHECK(near(q.len(), 1.0f));
     // q * inverse(q) is the identity rotation.
-    CHECK(near(rotate(q * q.Inverse(), float3{1, 0, 0}), float3{1, 0, 0}));
-    // For a unit quaternion, Conjugate() == Inverse().
-    CHECK(near(rotate(q.Conjugate(), float3{0, 1, 0}), rotate(q.Inverse(), float3{0, 1, 0})));
-    CHECK(q.Ptr()[3] == q.w);
+    CHECK(near(rotate(q * q.inverse(), float3{1, 0, 0}), float3{1, 0, 0}));
+    // For a unit quaternion, conjugate() == inverse().
+    CHECK(near(rotate(q.conjugate(), float3{0, 1, 0}), rotate(q.inverse(), float3{0, 1, 0})));
+    CHECK(q.ptr()[3] == q.w);
     quat acc = quat::identity();
     acc *= q; // in-place Hamilton product
     CHECK(near(rotate(acc, float3{1, 0, 0}), rotate(q, float3{1, 0, 0})));
 
     // ---- matrix ----
-    float4x4 M = compose_trs(float3{1, 2, 3}, q, float3{2, 2, 2});
-    CHECK(near(M.Determinant(), determinant(M)));
-    CHECK(near(M * M.Inverse(), float4x4::identity()));
-    CHECK(M.Transposed().Transposed() == M); // double transpose round-trips
+    float4x4 M = composeTRS(float3{1, 2, 3}, q, float3{2, 2, 2});
+    CHECK(near(M.determinant(), determinant(M)));
+    CHECK(near(M * M.inverse(), float4x4::identity()));
+    CHECK(M.transposed().transposed() == M); // double transpose round-trips
 
     float4x4 mt = M;
-    mt.Transpose(); // in place
-    CHECK(mt == M.Transposed());
+    mt.transpose(); // in place
+    CHECK(mt == M.transposed());
 
     float4x4 mi = M;
-    mi.Invert(); // in place
-    CHECK(near(mi, M.Inverse()));
+    mi.invert(); // in place
+    CHECK(near(mi, M.inverse()));
 
-    // Ptr is column-major: a translation's components land in the last 4 floats.
+    // ptr is column-major: a translation's components land in the last 4 floats.
     float4x4 T = translate(float3{7, 8, 9});
-    CHECK(T.Ptr()[12] == 7 && T.Ptr()[13] == 8 && T.Ptr()[14] == 9 && T.Ptr()[15] == 1);
+    CHECK(T.ptr()[12] == 7 && T.ptr()[13] == 8 && T.ptr()[14] == 9 && T.ptr()[15] == 1);
 
     float4x4 I2 = float4x4::identity();
     I2 += float4x4::identity();

@@ -77,14 +77,14 @@ whole API is constexpr. `float3` SIMD (padded load) and wider types come later.
 
 1. ✅ Project skeleton, SIMD backend, `vector<T,N>` (+ float4 SIMD), tests.
 2. ✅ `matrix<T,R,C>` (column-major, M*v), mul/transpose/identity, tests.
-3. ✅ `quat` + `transform`: translate/scale/rotate/look_at/compose_trs, and
+3. ✅ `quat` + `transform`: translate/scale/rotate/lookAt/composeTRS, and
    `perspective`/`ortho` with Vulkan depth [0,1] + Y-flip baked in. Tested.
 4. ✅ `detail/layout.hpp`: `std140<T>`/`std430<T>` wrappers, arrays, and
    `std140_align_v`/`std430_align_v` traits; offsets static-asserted vs the spec.
 5. ✅ Swizzles (`v.xyz()` / `v.swizzle<...>()`, function-style to keep
    standard-layout + constexpr) and `common.hpp` (min/max/clamp/saturate/lerp/
    step/smoothstep/abs/sign/reflect/distance + cmath wrappers). Tested.
-6. ✅ matrix `determinant`/`inverse` (2x2/3x3/4x4, constexpr) + `normal_matrix`
+6. ✅ matrix `determinant`/`inverse` (2x2/3x3/4x4, constexpr) + `normalMatrix`
    (inverse-transpose of the upper 3x3). Tested incl. TRS round-trip.
 7. ⏳ Wider SIMD (float3, double via AVX, half), benchmarks vs GLM.
 ```

@@ -23,6 +23,20 @@
 
 namespace vkm {
 
+// Forward declarations: the members transposed()/transpose()/inverse()/invert()/
+// determinant() delegate to these free forms (defined below the struct). Member
+// and free share a name, so the bodies qualify the call (vkm::transpose, ...) and
+// qualified lookup needs the names visible before the struct.
+template <class T, int R, int C>
+struct matrix;
+template <class T, int R, int C> [[nodiscard]] constexpr matrix<T, C, R> transpose(const matrix<T, R, C>& m);
+template <class T> [[nodiscard]] constexpr matrix<T, 2, 2> inverse(const matrix<T, 2, 2>& m);
+template <class T> [[nodiscard]] constexpr matrix<T, 3, 3> inverse(const matrix<T, 3, 3>& m);
+template <class T> [[nodiscard]] constexpr matrix<T, 4, 4> inverse(const matrix<T, 4, 4>& m);
+template <class T> [[nodiscard]] constexpr T determinant(const matrix<T, 2, 2>& m);
+template <class T> [[nodiscard]] constexpr T determinant(const matrix<T, 3, 3>& m);
+template <class T> [[nodiscard]] constexpr T determinant(const matrix<T, 4, 4>& m);
+
 template <class T, int R, int C>
 struct matrix {
     vector<T, R> cols[C]; // column-major: cols[c] is the c-th column
@@ -58,23 +72,23 @@ struct matrix {
         return m;
     }
 
-    // Member-style API (PascalCase). Free-function forms also exist.
-    // Column-major storage, so Ptr() is ready to memcpy into a UBO.
-    [[nodiscard]] T* Ptr() { return &cols[0].x; }
-    [[nodiscard]] const T* Ptr() const { return &cols[0].x; }
-    [[nodiscard]] constexpr matrix<T, C, R> Transposed() const { return transpose(*this); }
-    constexpr matrix& Transpose()
+    // Member-style API (camelCase, fluent). Free-function forms also exist.
+    // Column-major storage, so ptr() is ready to memcpy into a UBO.
+    [[nodiscard]] T* ptr() { return &cols[0].x; }
+    [[nodiscard]] const T* ptr() const { return &cols[0].x; }
+    [[nodiscard]] constexpr matrix<T, C, R> transposed() const { return vkm::transpose(*this); }
+    constexpr matrix& transpose()
         requires(R == C)
-    { return *this = transpose(*this); } // in place
-    [[nodiscard]] constexpr matrix Inverse() const
+    { return *this = vkm::transpose(*this); } // in place
+    [[nodiscard]] constexpr matrix inverse() const
         requires(R == C && R >= 2 && R <= 4)
-    { return inverse(*this); }
-    constexpr matrix& Invert()
+    { return vkm::inverse(*this); }
+    constexpr matrix& invert()
         requires(R == C && R >= 2 && R <= 4)
-    { return *this = inverse(*this); } // in place
-    [[nodiscard]] constexpr T Determinant() const
+    { return *this = vkm::inverse(*this); } // in place
+    [[nodiscard]] constexpr T determinant() const
         requires(R == C && R >= 2 && R <= 4)
-    { return determinant(*this); }
+    { return vkm::determinant(*this); }
 
     static constexpr int rows = R;
     static constexpr int columns = C;
@@ -265,7 +279,7 @@ template <class T>
 // Normal matrix: transpose(inverse(upper-left 3x3)) of a model/model-view matrix.
 // Use it to transform normals when the model has non-uniform scale.
 template <class T>
-[[nodiscard]] constexpr matrix<T, 3, 3> normal_matrix(const matrix<T, 4, 4>& m) {
+[[nodiscard]] constexpr matrix<T, 3, 3> normalMatrix(const matrix<T, 4, 4>& m) {
     matrix<T, 3, 3> upper{m.cols[0].xyz(), m.cols[1].xyz(), m.cols[2].xyz()};
     return transpose(inverse(upper));
 }

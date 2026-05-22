@@ -23,8 +23,8 @@ struct quat {
     [[nodiscard]] static constexpr quat identity() { return {0, 0, 0, 1}; }
 
     // Rotation of `angle` radians about `axis` (need not be normalized).
-    [[nodiscard]] static quat from_axis_angle(float3 axis, float angle) {
-        float3 n = normalize(axis);
+    [[nodiscard]] static quat fromAxisAngle(float3 axis, float angle) {
+        float3 n = vkm::normalize(axis);
         float h = angle * 0.5f;
         float s = std::sin(h);
         return {n.x * s, n.y * s, n.z * s, std::cos(h)};
@@ -32,30 +32,30 @@ struct quat {
 
     [[nodiscard]] constexpr float3 xyz() const { return {x, y, z}; }
 
-    // Member-style API (PascalCase). Implemented directly so the type stays
+    // Member-style API (camelCase, fluent). Implemented directly so the type stays
     // self-contained; free-function forms also exist.
-    [[nodiscard]] float Len() const { return std::sqrt(x * x + y * y + z * z + w * w); }
-    quat& Normalize() { // in place
-        float inv = 1.0f / Len();
+    [[nodiscard]] float len() const { return std::sqrt(x * x + y * y + z * z + w * w); }
+    quat& normalize() { // in place
+        float inv = 1.0f / len();
         x *= inv; y *= inv; z *= inv; w *= inv;
         return *this;
     }
-    [[nodiscard]] constexpr quat Conjugate() const { return {-x, -y, -z, w}; }
-    [[nodiscard]] constexpr quat Inverse() const { // conjugate / |q|^2
+    [[nodiscard]] constexpr quat conjugate() const { return {-x, -y, -z, w}; }
+    [[nodiscard]] constexpr quat inverse() const { // conjugate / |q|^2
         float inv = 1.0f / (x * x + y * y + z * z + w * w);
         return {-x * inv, -y * inv, -z * inv, w * inv};
     }
-    quat& Invert() { return *this = Inverse(); } // in place
-    [[nodiscard]] quat Normalized() const {      // unit copy
-        float inv = 1.0f / Len();
+    quat& invert() { return *this = inverse(); } // in place
+    [[nodiscard]] quat normalized() const {      // unit copy
+        float inv = 1.0f / len();
         return {x * inv, y * inv, z * inv, w * inv};
     }
     // Mutating Unity-style setters (Unity's instance methods). Defined out-of-line
     // below, after the free builders they delegate to.
-    quat& SetFromToRotation(float3 from_direction, float3 to_direction);
-    quat& SetLookRotation(float3 view, float3 up_hint = up);
-    [[nodiscard]] float* Ptr() { return &x; }
-    [[nodiscard]] const float* Ptr() const { return &x; }
+    quat& setFromToRotation(float3 from_direction, float3 to_direction);
+    quat& setLookRotation(float3 view, float3 up_hint = up);
+    [[nodiscard]] float* ptr() { return &x; }
+    [[nodiscard]] const float* ptr() const { return &x; }
 };
 
 // Hamilton product: applying (a*b) rotates by b, then a.
@@ -95,7 +95,7 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
             a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t};
 }
 
-// Normalized lerp. Picks the shortest arc (flips b if the dot is negative).
+// normalized lerp. Picks the shortest arc (flips b if the dot is negative).
 [[nodiscard]] inline quat nlerp(quat a, quat b, float t) {
     if (dot(a, b) < 0.0f) b = {-b.x, -b.y, -b.z, -b.w};
     return normalize(lerp(a, b, t));
@@ -127,7 +127,7 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
 }
 
 // Unit quaternion -> 3x3 rotation matrix (column-major, v' = R*v).
-[[nodiscard]] constexpr float3x3 to_float3x3(quat q) {
+[[nodiscard]] constexpr float3x3 toFloat3x3(quat q) {
     float x = q.x, y = q.y, z = q.z, w = q.w;
     float xx = x * x, yy = y * y, zz = z * z;
     float xy = x * y, xz = x * z, yz = y * z;
@@ -139,17 +139,17 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
 }
 
 // Unit quaternion -> 4x4 (rotation in the upper-left 3x3).
-[[nodiscard]] constexpr float4x4 to_float4x4(quat q) {
-    float3x3 r = to_float3x3(q);
+[[nodiscard]] constexpr float4x4 toFloat4x4(quat q) {
+    float3x3 r = toFloat3x3(q);
     return float4x4{float4{r[0], 0.0f},
                     float4{r[1], 0.0f},
                     float4{r[2], 0.0f},
                     float4{0, 0, 0, 1}};
 }
 
-// Rotation matrix -> unit quaternion (inverse of to_float3x3). Shepperd's method:
+// Rotation matrix -> unit quaternion (inverse of toFloat3x3). Shepperd's method:
 // build from whichever diagonal term is largest, for numerical stability.
-[[nodiscard]] inline quat to_quat(float3x3 m) {
+[[nodiscard]] inline quat toQuat(float3x3 m) {
     // Column-major: m[c][r] is the element at row r, column c.
     float m00 = m[0][0], m11 = m[1][1], m22 = m[2][2];
     float trace = m00 + m11 + m22;
@@ -185,7 +185,7 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
 
 // Shortest-arc rotation taking direction `from` onto direction `to` (neither need
 // be unit). (Unity Quaternion.FromToRotation.)
-[[nodiscard]] inline quat from_to_rotation(float3 from, float3 to) {
+[[nodiscard]] inline quat fromToRotation(float3 from, float3 to) {
     float3 f = normalize(from);
     float3 t = normalize(to);
     float d = dot(f, t);
@@ -206,29 +206,29 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
 // local up aligned as closely as possible to `up_hint`. RH / Y-up — see the
 // direction constants in vector.hpp. (Unity Quaternion.LookRotation; Unity is
 // left-handed with +Z forward, so its result differs by that convention.)
-[[nodiscard]] inline quat look_rotation(float3 forward, float3 up_hint = up) {
+[[nodiscard]] inline quat lookRotation(float3 forward, float3 up_hint = up) {
     float3 f = normalize(forward);
     float3 r = normalize(cross(f, up_hint)); // right
     float3 u = cross(r, f);                  // re-orthogonalized up
     // Columns map local +X,+Y,+Z to world. Local -Z is forward, so column 2
     // (image of local +Z) is -f.
-    return to_quat(float3x3{r, u, -f});
+    return toQuat(float3x3{r, u, -f});
 }
 
 // Rotate quaternion `from` toward `to` by at most max_radians_delta; snaps to
 // `to` once within reach. (Unity Quaternion.RotateTowards, but radians.)
-[[nodiscard]] inline quat rotate_towards(quat from, quat to, float max_radians_delta) {
+[[nodiscard]] inline quat rotateTowards(quat from, quat to, float max_radians_delta) {
     float a = angle(from, to);
     if (a < 1e-6f) return to;
     float t = max_radians_delta / a;
     return t >= 1.0f ? to : slerp(from, to, t);
 }
 
-inline quat& quat::SetFromToRotation(float3 from_direction, float3 to_direction) {
-    return *this = from_to_rotation(from_direction, to_direction);
+inline quat& quat::setFromToRotation(float3 from_direction, float3 to_direction) {
+    return *this = fromToRotation(from_direction, to_direction);
 }
-inline quat& quat::SetLookRotation(float3 view, float3 up_hint) {
-    return *this = look_rotation(view, up_hint);
+inline quat& quat::setLookRotation(float3 view, float3 up_hint) {
+    return *this = lookRotation(view, up_hint);
 }
 
 } // namespace vkm

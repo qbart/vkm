@@ -24,9 +24,9 @@ static bool near(float4 a, float4 b) {
 
 int main() {
     // --- quaternion: 90 deg about +Z maps +X -> +Y ---
-    quat qz = quat::from_axis_angle(float3{0, 0, 1}, rad(90));
+    quat qz = quat::fromAxisAngle(float3{0, 0, 1}, rad(90));
     CHECK(near(rotate(qz, float3{1, 0, 0}), float3{0, 1, 0}));         // optimized rotate
-    CHECK(near(to_float4x4(qz) * float4{1, 0, 0, 1}, float4{0, 1, 0, 1})); // via matrix
+    CHECK(near(toFloat4x4(qz) * float4{1, 0, 0, 1}, float4{0, 1, 0, 1})); // via matrix
     // Composition order: q*q = 180 deg about Z maps +X -> -X.
     CHECK(near(rotate(qz * qz, float3{1, 0, 0}), float3{-1, 0, 0}));
 
@@ -45,8 +45,8 @@ int main() {
     CHECK(near(translate(float3{10, 20, 30}) * float4{1, 2, 3, 1}, float4{11, 22, 33, 1}));
     CHECK(near(scale(float3{2, 3, 4}) * float4{1, 1, 1, 1}, float4{2, 3, 4, 1}));
 
-    // --- look_at (RH): camera 5 units down +Z, looking at origin ---
-    float4x4 V = look_at(float3{0, 0, 5}, float3{0, 0, 0}, float3{0, 1, 0});
+    // --- lookAt (RH): camera 5 units down +Z, looking at origin ---
+    float4x4 V = lookAt(float3{0, 0, 5}, float3{0, 0, 0}, float3{0, 1, 0});
     CHECK(near(V * float4{0, 0, 0, 1}, float4{0, 0, -5, 1})); // origin -> 5 in front (-Z)
     CHECK(near(V * float4{0, 0, 5, 1}, float4{0, 0, 0, 1}));  // eye -> view origin
 
@@ -68,7 +68,7 @@ int main() {
     CHECK(near((O * float4{0, 0, -f, 1}).z, 1.0f));
 
     // --- a full MVP pipeline: model point through TRS -> view -> proj ---
-    float4x4 M = compose_trs(float3{0, 0, 0}, quat::identity(), float3{1, 1, 1});
+    float4x4 M = composeTRS(float3{0, 0, 0}, quat::identity(), float3{1, 1, 1});
     float4x4 mvp = P * V * M;
     float4 clip = mvp * float4{0, 0, 0, 1}; // origin should be in front of camera
     CHECK(clip.w > 0.0f);                   // positive w -> in front, will divide sanely

@@ -168,13 +168,13 @@ template <std::floating_point T, int N>
 // Component of v in the plane with the given normal: v minus its projection onto
 // the normal. Returns v unchanged when planeNormal is ~zero. (Unity ProjectOnPlane.)
 template <std::floating_point T, int N>
-[[nodiscard]] constexpr vector<T, N> project_on_plane(vector<T, N> v, vector<T, N> plane_normal) {
+[[nodiscard]] constexpr vector<T, N> projectOnPlane(vector<T, N> v, vector<T, N> plane_normal) {
     return v - project(v, plane_normal);
 }
 
 // Step a scalar toward target by at most max_delta. Never overshoots.
 template <std::floating_point T>
-[[nodiscard]] constexpr T move_towards(T current, T target, T max_delta) {
+[[nodiscard]] constexpr T moveTowards(T current, T target, T max_delta) {
     return abs(target - current) <= max_delta ? target
                                               : current + sign(target - current) * max_delta;
 }
@@ -182,7 +182,7 @@ template <std::floating_point T>
 // Move point `current` toward `target` by at most max_distance_delta; never
 // overshoots, negative delta moves away. (Unity Vector3.MoveTowards.)
 template <std::floating_point T, int N>
-[[nodiscard]] vector<T, N> move_towards(vector<T, N> current, vector<T, N> target, T max_distance_delta) {
+[[nodiscard]] vector<T, N> moveTowards(vector<T, N> current, vector<T, N> target, T max_distance_delta) {
     vector<T, N> d = target - current;
     T dist = length(d);
     if (dist <= max_distance_delta || dist < T(1e-20)) return target;

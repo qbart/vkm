@@ -1,5 +1,5 @@
-// vkm — Unity-style quaternion ops: angle / from_to_rotation / look_rotation /
-// rotate_towards / to_quat, plus Invert/Normalized and the direction constants.
+// vkm — Unity-style quaternion ops: angle / fromToRotation / lookRotation /
+// rotateTowards / toQuat, plus invert/normalized and the direction constants.
 
 #include <vkm/vkm.hpp>
 
@@ -32,66 +32,66 @@ int main() {
     CHECK(near(cross(right, up), back)); // RH basis: X × Y = +Z = back
 
     // ---- angle(quat, quat), radians ----
-    quat q90 = quat::from_axis_angle(float3{0, 0, 1}, pi / 2);
+    quat q90 = quat::fromAxisAngle(float3{0, 0, 1}, pi / 2);
     CHECK(near(angle(quat::identity(), q90), pi / 2));
     CHECK(near(angle(q90, q90), 0.0f));
 
-    // ---- to_quat: inverse of to_float3x3 (compare via rotation effect, sign-agnostic) ----
-    for (quat q : {quat::from_axis_angle(float3{0, 1, 0}, 0.7f),
-                   quat::from_axis_angle(float3{1, 2, 3}, 2.1f),
-                   quat::from_axis_angle(float3{-1, 0.5f, 2}, -1.3f)}) {
-        quat rt = to_quat(to_float3x3(q));
+    // ---- toQuat: inverse of toFloat3x3 (compare via rotation effect, sign-agnostic) ----
+    for (quat q : {quat::fromAxisAngle(float3{0, 1, 0}, 0.7f),
+                   quat::fromAxisAngle(float3{1, 2, 3}, 2.1f),
+                   quat::fromAxisAngle(float3{-1, 0.5f, 2}, -1.3f)}) {
+        quat rt = toQuat(toFloat3x3(q));
         for (float3 v : {float3{1, 0, 0}, float3{0, 1, 0}, float3{1, 2, 3}})
             CHECK(near(rotate(rt, v), rotate(q, v)));
     }
 
-    // ---- from_to_rotation ----
-    CHECK(near(rotate(from_to_rotation(float3{1, 0, 0}, float3{0, 1, 0}), float3{1, 0, 0}),
+    // ---- fromToRotation ----
+    CHECK(near(rotate(fromToRotation(float3{1, 0, 0}, float3{0, 1, 0}), float3{1, 0, 0}),
                float3{0, 1, 0}));
-    CHECK(near(rotate(from_to_rotation(float3{2, 0, 0}, float3{2, 0, 0}), float3{1, 0, 0}),
+    CHECK(near(rotate(fromToRotation(float3{2, 0, 0}, float3{2, 0, 0}), float3{1, 0, 0}),
                float3{1, 0, 0})); // aligned -> identity
-    CHECK(near(rotate(from_to_rotation(float3{1, 0, 0}, float3{-1, 0, 0}), float3{1, 0, 0}),
+    CHECK(near(rotate(fromToRotation(float3{1, 0, 0}, float3{-1, 0, 0}), float3{1, 0, 0}),
                float3{-1, 0, 0})); // opposite -> 180 deg
     {
         float3 a{1, 2, 3}, b{-2, 1, 0.5f};
-        CHECK(near(rotate(from_to_rotation(a, b), normalize(a)), normalize(b)));
+        CHECK(near(rotate(fromToRotation(a, b), normalize(a)), normalize(b)));
     }
 
-    // ---- look_rotation: local forward (-Z) maps to the look direction, up stays up ----
+    // ---- lookRotation: local forward (-Z) maps to the look direction, up stays up ----
     {
-        quat q = look_rotation(forward, up); // already facing -Z, up +Y
+        quat q = lookRotation(forward, up); // already facing -Z, up +Y
         CHECK(near(rotate(q, forward), forward));
         CHECK(near(rotate(q, up), up));
         CHECK(near(q, quat::identity()));
     }
     {
-        quat q = look_rotation(float3{1, 0, 0}); // face +X, default up
+        quat q = lookRotation(float3{1, 0, 0}); // face +X, default up
         CHECK(near(rotate(q, forward), float3{1, 0, 0})); // -Z -> +X
         CHECK(near(rotate(q, up), float3{0, 1, 0}));      // up preserved
     }
     for (float3 dir : {float3{0, 0, 1}, float3{1, 1, 0}, float3{1, 2, 2}}) {
-        quat q = look_rotation(dir, up);
+        quat q = lookRotation(dir, up);
         CHECK(near(rotate(q, forward), normalize(dir))); // forward axis hits the target dir
     }
 
-    // ---- rotate_towards(quat) ----
+    // ---- rotateTowards(quat) ----
     {
         quat from = quat::identity(), to = q90;
-        CHECK(near(angle(rotate_towards(from, to, pi), to), 0.0f));        // budget covers it -> to
-        quat half = rotate_towards(from, to, pi / 4);                      // half the pi/2 arc
+        CHECK(near(angle(rotateTowards(from, to, pi), to), 0.0f));        // budget covers it -> to
+        quat half = rotateTowards(from, to, pi / 4);                      // half the pi/2 arc
         CHECK(near(angle(from, half), pi / 4));
         CHECK(near(angle(half, to), pi / 4));
-        CHECK(near(angle(rotate_towards(from, from, 1.0f), from), 0.0f));  // already there
+        CHECK(near(angle(rotateTowards(from, from, 1.0f), from), 0.0f));  // already there
     }
 
-    // ---- Inverse / Invert / Normalized ----
+    // ---- inverse / invert / normalized ----
     {
-        quat q = quat::from_axis_angle(float3{0.2f, 1, -0.5f}, 1.1f);
-        CHECK(near(rotate(q * q.Inverse(), float3{1, 2, 3}), float3{1, 2, 3})); // q * q^-1 = id
+        quat q = quat::fromAxisAngle(float3{0.2f, 1, -0.5f}, 1.1f);
+        CHECK(near(rotate(q * q.inverse(), float3{1, 2, 3}), float3{1, 2, 3})); // q * q^-1 = id
         quat qi = q;
-        qi.Invert();
-        CHECK(near(qi, q.Inverse()));            // in-place matches the copy form
-        CHECK(near(quat{1, 2, 3, 4}.Normalized().Len(), 1.0f)); // non-unit -> unit copy
+        qi.invert();
+        CHECK(near(qi, q.inverse()));            // in-place matches the copy form
+        CHECK(near(quat{1, 2, 3, 4}.normalized().len(), 1.0f)); // non-unit -> unit copy
     }
 
     if (g_failures == 0) {
