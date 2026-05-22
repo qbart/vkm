@@ -142,4 +142,92 @@ template <class T, int R, int C>
     return true;
 }
 
+// ---- determinant / inverse (square float/double matrices) --------------------
+// e(r, c) reads the element at row r, column c. inverse() assumes the matrix is
+// invertible; a singular matrix yields inf/nan (as in GLM), not a thrown error.
+
+template <class T>
+[[nodiscard]] constexpr T determinant(const matrix<T, 2, 2>& m) {
+    return m.cols[0][0] * m.cols[1][1] - m.cols[1][0] * m.cols[0][1];
+}
+template <class T>
+[[nodiscard]] constexpr matrix<T, 2, 2> inverse(const matrix<T, 2, 2>& m) {
+    T a = m.cols[0][0], c = m.cols[0][1], b = m.cols[1][0], d = m.cols[1][1];
+    T inv = T{1} / (a * d - b * c);
+    return matrix<T, 2, 2>{vector<T, 2>{d * inv, -c * inv}, vector<T, 2>{-b * inv, a * inv}};
+}
+
+template <class T>
+[[nodiscard]] constexpr T determinant(const matrix<T, 3, 3>& m) {
+    auto e = [&](int r, int col) { return m.cols[col][r]; };
+    return e(0, 0) * (e(1, 1) * e(2, 2) - e(1, 2) * e(2, 1))
+         - e(0, 1) * (e(1, 0) * e(2, 2) - e(1, 2) * e(2, 0))
+         + e(0, 2) * (e(1, 0) * e(2, 1) - e(1, 1) * e(2, 0));
+}
+template <class T>
+[[nodiscard]] constexpr matrix<T, 3, 3> inverse(const matrix<T, 3, 3>& m) {
+    auto e = [&](int r, int col) { return m.cols[col][r]; };
+    T a = e(0, 0), b = e(0, 1), c = e(0, 2);
+    T d = e(1, 0), f = e(1, 1), g = e(1, 2);
+    T h = e(2, 0), i = e(2, 1), j = e(2, 2);
+    T inv = T{1} / determinant(m);
+    // Columns of the result (adjugate / det).
+    return matrix<T, 3, 3>{
+        vector<T, 3>{(f * j - g * i) * inv, (g * h - d * j) * inv, (d * i - f * h) * inv},
+        vector<T, 3>{(c * i - b * j) * inv, (a * j - c * h) * inv, (b * h - a * i) * inv},
+        vector<T, 3>{(b * g - c * f) * inv, (c * d - a * g) * inv, (a * f - b * d) * inv}};
+}
+
+template <class T>
+[[nodiscard]] constexpr matrix<T, 4, 4> inverse(const matrix<T, 4, 4>& src) {
+    // Copy to a flat column-major array (m[c*4 + r] == element row r, col c).
+    // A local array (not a reinterpreted pointer) keeps this valid in constexpr.
+    T m[16];
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r) m[c * 4 + r] = src.cols[c][r];
+    T inv[16];
+    inv[0]  =  m[5]*m[10]*m[15] - m[5]*m[11]*m[14] - m[9]*m[6]*m[15] + m[9]*m[7]*m[14] + m[13]*m[6]*m[11] - m[13]*m[7]*m[10];
+    inv[4]  = -m[4]*m[10]*m[15] + m[4]*m[11]*m[14] + m[8]*m[6]*m[15] - m[8]*m[7]*m[14] - m[12]*m[6]*m[11] + m[12]*m[7]*m[10];
+    inv[8]  =  m[4]*m[9]*m[15]  - m[4]*m[11]*m[13] - m[8]*m[5]*m[15] + m[8]*m[7]*m[13] + m[12]*m[5]*m[11] - m[12]*m[7]*m[9];
+    inv[12] = -m[4]*m[9]*m[14]  + m[4]*m[10]*m[13] + m[8]*m[5]*m[14] - m[8]*m[6]*m[13] - m[12]*m[5]*m[10] + m[12]*m[6]*m[9];
+    inv[1]  = -m[1]*m[10]*m[15] + m[1]*m[11]*m[14] + m[9]*m[2]*m[15] - m[9]*m[3]*m[14] - m[13]*m[2]*m[11] + m[13]*m[3]*m[10];
+    inv[5]  =  m[0]*m[10]*m[15] - m[0]*m[11]*m[14] - m[8]*m[2]*m[15] + m[8]*m[3]*m[14] + m[12]*m[2]*m[11] - m[12]*m[3]*m[10];
+    inv[9]  = -m[0]*m[9]*m[15]  + m[0]*m[11]*m[13] + m[8]*m[1]*m[15] - m[8]*m[3]*m[13] - m[12]*m[1]*m[11] + m[12]*m[3]*m[9];
+    inv[13] =  m[0]*m[9]*m[14]  - m[0]*m[10]*m[13] - m[8]*m[1]*m[14] + m[8]*m[2]*m[13] + m[12]*m[1]*m[10] - m[12]*m[2]*m[9];
+    inv[2]  =  m[1]*m[6]*m[15]  - m[1]*m[7]*m[14]  - m[5]*m[2]*m[15] + m[5]*m[3]*m[14] + m[13]*m[2]*m[7]  - m[13]*m[3]*m[6];
+    inv[6]  = -m[0]*m[6]*m[15]  + m[0]*m[7]*m[14]  + m[4]*m[2]*m[15] - m[4]*m[3]*m[14] - m[12]*m[2]*m[7]  + m[12]*m[3]*m[6];
+    inv[10] =  m[0]*m[5]*m[15]  - m[0]*m[7]*m[13]  - m[4]*m[1]*m[15] + m[4]*m[3]*m[13] + m[12]*m[1]*m[7]  - m[12]*m[3]*m[5];
+    inv[14] = -m[0]*m[5]*m[14]  + m[0]*m[6]*m[13]  + m[4]*m[1]*m[14] - m[4]*m[2]*m[13] - m[12]*m[1]*m[6]  + m[12]*m[2]*m[5];
+    inv[3]  = -m[1]*m[6]*m[11]  + m[1]*m[7]*m[10]  + m[5]*m[2]*m[11] - m[5]*m[3]*m[10] - m[9]*m[2]*m[7]   + m[9]*m[3]*m[6];
+    inv[7]  =  m[0]*m[6]*m[11]  - m[0]*m[7]*m[10]  - m[4]*m[2]*m[11] + m[4]*m[3]*m[10] + m[8]*m[2]*m[7]   - m[8]*m[3]*m[6];
+    inv[11] = -m[0]*m[5]*m[11]  + m[0]*m[7]*m[9]   + m[4]*m[1]*m[11] - m[4]*m[3]*m[9]  - m[8]*m[1]*m[7]   + m[8]*m[3]*m[5];
+    inv[15] =  m[0]*m[5]*m[10]  - m[0]*m[6]*m[9]   - m[4]*m[1]*m[10] + m[4]*m[2]*m[9]  + m[8]*m[1]*m[6]   - m[8]*m[2]*m[5];
+
+    T det = T{1} / (m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12]);
+    matrix<T, 4, 4> out;
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r) out.cols[c][r] = inv[c * 4 + r] * det;
+    return out;
+}
+
+template <class T>
+[[nodiscard]] constexpr T determinant(const matrix<T, 4, 4>& src) {
+    T m[16];
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r) m[c * 4 + r] = src.cols[c][r];
+    T c0 =  m[5]*(m[10]*m[15]-m[11]*m[14]) - m[9]*(m[6]*m[15]-m[7]*m[14]) + m[13]*(m[6]*m[11]-m[7]*m[10]);
+    T c1 = -m[4]*(m[10]*m[15]-m[11]*m[14]) + m[8]*(m[6]*m[15]-m[7]*m[14]) - m[12]*(m[6]*m[11]-m[7]*m[10]);
+    T c2 =  m[4]*(m[9]*m[15]-m[11]*m[13])  - m[8]*(m[5]*m[15]-m[7]*m[13]) + m[12]*(m[5]*m[11]-m[7]*m[9]);
+    T c3 = -m[4]*(m[9]*m[14]-m[10]*m[13])  + m[8]*(m[5]*m[14]-m[6]*m[13]) - m[12]*(m[5]*m[10]-m[6]*m[9]);
+    return m[0] * c0 + m[1] * c1 + m[2] * c2 + m[3] * c3;
+}
+
+// Normal matrix: transpose(inverse(upper-left 3x3)) of a model/model-view matrix.
+// Use it to transform normals when the model has non-uniform scale.
+template <class T>
+[[nodiscard]] constexpr matrix<T, 3, 3> normal_matrix(const matrix<T, 4, 4>& m) {
+    matrix<T, 3, 3> upper{m.cols[0].xyz(), m.cols[1].xyz(), m.cols[2].xyz()};
+    return transpose(inverse(upper));
+}
+
 } // namespace vkm

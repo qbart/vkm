@@ -80,6 +80,7 @@ whole API is constexpr. `float3` SIMD (padded load) and wider types come later.
 5. ✅ Swizzles (`v.xyz()` / `v.swizzle<...>()`, function-style to keep
    standard-layout + constexpr) and `common.hpp` (min/max/clamp/saturate/lerp/
    step/smoothstep/abs/sign/reflect/distance + cmath wrappers). Tested.
-6. ⏳ matrix `inverse`/`determinant` + normal matrix (inverse-transpose).
-7. Wider SIMD (float3, double via AVX, half), benchmarks vs GLM.
+6. ✅ matrix `determinant`/`inverse` (2x2/3x3/4x4, constexpr) + `normal_matrix`
+   (inverse-transpose of the upper 3x3). Tested incl. TRS round-trip.
+7. ⏳ Wider SIMD (float3, double via AVX, half), benchmarks vs GLM.
 ```
