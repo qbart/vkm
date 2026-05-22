@@ -42,6 +42,29 @@ struct alignas(2 * sizeof(T)) vector<T, 2> {
         return vector<T, static_cast<int>(sizeof...(I))>{(*this)[I]...};
     }
     [[nodiscard]] constexpr vector<T, 2> yx() const { return {y, x}; }
+    // Member-style API (PascalCase). Free-function forms also exist.
+    [[nodiscard]] T Len() const { return length(*this); }              // magnitude
+    [[nodiscard]] constexpr T Len2() const { return length2(*this); }  // magnitude squared
+    vector& Normalize() { return *this = normalize(*this); }           // in place
+    [[nodiscard]] vector Normalized() const { return normalize(*this); }
+    [[nodiscard]] constexpr vector Reflected(vector n) const { return *this - n * (T{2} * dot(*this, n)); }
+    [[nodiscard]] constexpr vector Abs() const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < T{0} ? -c : c; }
+        return r;
+    }
+    [[nodiscard]] constexpr vector Saturated() const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < T{0} ? T{0} : (c > T{1} ? T{1} : c); }
+        return r;
+    }
+    [[nodiscard]] constexpr vector Clamped(T lo, T hi) const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < lo ? lo : (c > hi ? hi : c); }
+        return r;
+    }
+    [[nodiscard]] T* Ptr() { return &(*this)[0]; }              // first component, for GPU upload / C APIs
+    [[nodiscard]] const T* Ptr() const { return &(*this)[0]; }
     static constexpr int size = 2;
     using value_type = T;
 };
@@ -63,6 +86,29 @@ struct vector<T, 3> {
     [[nodiscard]] constexpr vector<T, 2> xy() const { return {x, y}; }
     [[nodiscard]] constexpr vector<T, 2> xz() const { return {x, z}; }
     [[nodiscard]] constexpr vector<T, 2> yz() const { return {y, z}; }
+    // Member-style API (PascalCase). Free-function forms also exist.
+    [[nodiscard]] T Len() const { return length(*this); }              // magnitude
+    [[nodiscard]] constexpr T Len2() const { return length2(*this); }  // magnitude squared
+    vector& Normalize() { return *this = normalize(*this); }           // in place
+    [[nodiscard]] vector Normalized() const { return normalize(*this); }
+    [[nodiscard]] constexpr vector Reflected(vector n) const { return *this - n * (T{2} * dot(*this, n)); }
+    [[nodiscard]] constexpr vector Abs() const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < T{0} ? -c : c; }
+        return r;
+    }
+    [[nodiscard]] constexpr vector Saturated() const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < T{0} ? T{0} : (c > T{1} ? T{1} : c); }
+        return r;
+    }
+    [[nodiscard]] constexpr vector Clamped(T lo, T hi) const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < lo ? lo : (c > hi ? hi : c); }
+        return r;
+    }
+    [[nodiscard]] T* Ptr() { return &(*this)[0]; }              // first component, for GPU upload / C APIs
+    [[nodiscard]] const T* Ptr() const { return &(*this)[0]; }
     static constexpr int size = 3;
     using value_type = T;
 };
@@ -89,6 +135,29 @@ struct alignas(4 * sizeof(T)) vector<T, 4> {
     [[nodiscard]] constexpr vector<T, 2> zw() const { return {z, w}; }
     [[nodiscard]] constexpr vector<T, 3> rgb() const { return {x, y, z}; }
     [[nodiscard]] constexpr vector<T, 2> rg() const { return {x, y}; }
+    // Member-style API (PascalCase). Free-function forms also exist.
+    [[nodiscard]] T Len() const { return length(*this); }              // magnitude
+    [[nodiscard]] constexpr T Len2() const { return length2(*this); }  // magnitude squared
+    vector& Normalize() { return *this = normalize(*this); }           // in place
+    [[nodiscard]] vector Normalized() const { return normalize(*this); }
+    [[nodiscard]] constexpr vector Reflected(vector n) const { return *this - n * (T{2} * dot(*this, n)); }
+    [[nodiscard]] constexpr vector Abs() const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < T{0} ? -c : c; }
+        return r;
+    }
+    [[nodiscard]] constexpr vector Saturated() const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < T{0} ? T{0} : (c > T{1} ? T{1} : c); }
+        return r;
+    }
+    [[nodiscard]] constexpr vector Clamped(T lo, T hi) const {
+        vector r{};
+        for (int i = 0; i < size; ++i) { T c = (*this)[i]; r[i] = c < lo ? lo : (c > hi ? hi : c); }
+        return r;
+    }
+    [[nodiscard]] T* Ptr() { return &(*this)[0]; }              // first component, for GPU upload / C APIs
+    [[nodiscard]] const T* Ptr() const { return &(*this)[0]; }
     static constexpr int size = 4;
     using value_type = T;
 };
@@ -196,6 +265,17 @@ template <class T, int N>
     return r;
 }
 [[nodiscard]] constexpr float4 operator*(float s, float4 a) { return a * s; }
+
+// ---- compound assignment ------------------------------------------------------
+// Free functions (one definition covers every N); they reuse the binary ops
+// above, so float4 still goes through the SIMD path.
+
+template <class T, int N> constexpr vector<T, N>& operator+=(vector<T, N>& a, vector<T, N> b) { return a = a + b; }
+template <class T, int N> constexpr vector<T, N>& operator-=(vector<T, N>& a, vector<T, N> b) { return a = a - b; }
+template <class T, int N> constexpr vector<T, N>& operator*=(vector<T, N>& a, vector<T, N> b) { return a = a * b; }
+template <class T, int N> constexpr vector<T, N>& operator/=(vector<T, N>& a, vector<T, N> b) { return a = a / b; }
+template <class T, int N> constexpr vector<T, N>& operator*=(vector<T, N>& a, T s) { return a = a * s; }
+template <class T, int N> constexpr vector<T, N>& operator/=(vector<T, N>& a, T s) { return a = a / s; }
 
 // ---- geometric helpers --------------------------------------------------------
 

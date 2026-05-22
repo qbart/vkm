@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(clang++ --version)",
+      "Bash(clang++ -std=c++23 -x c++ - -o /dev/null)",
+      "Bash(cmake --version)",
+      "Bash(cmake -S . -B build -DCMAKE_BUILD_TYPE=Release)",
+      "Bash(cmake --build build)",
+      "Bash(./build/vkm_tests)",
+      "Bash(clang++ -std=c++23 -O2 -Wall -Wextra -Iinclude tests/test_vector.cpp -o /tmp/vkm_tests)",
+      "Bash(/tmp/vkm_tests)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(cmake -S . -B build)",
+      "Bash(ctest --test-dir build --output-on-failure)",
+      "Bash(cat)",
+      "Bash(clang++ -std=c++23 -O2 -Iinclude /tmp/vkm_layout.cpp -o /tmp/vkm_layout)",
+      "Bash(/tmp/vkm_layout)",
+      "Bash(ctest --test-dir build)",
+      "Bash(clang++ -std=c++23 -O2 -Wall -Iinclude examples/usage.cpp -o /tmp/usage)",
+      "Bash(/tmp/usage)",
+      "Bash(clang++ -std=c++23 -O2 -Wall -Iinclude /tmp/vkm_alias.cpp -o /tmp/vkm_alias)",
+      "Bash(/tmp/vkm_alias)",
+      "Bash(echo \"alias+rename OK \\(exit $?\\)\")",
+      "Bash(clang++ -std=c++23 -O2 -Wall -Iinclude /tmp/vkm_glsl.cpp -o /tmp/vkm_glsl)",
+      "Bash(/tmp/vkm_glsl)",
+      "Bash(echo \"GLSL aliases OK \\(exit $?\\)\")",
+      "Bash(clang++ -std=c++23 -O2 -Wall -Iinclude /tmp/vkm_methods.cpp -o /tmp/vkm_methods)",
+      "Bash(/tmp/vkm_methods)"
+    ]
+  }
+}

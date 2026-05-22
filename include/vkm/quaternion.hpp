@@ -31,6 +31,22 @@ struct quat {
     }
 
     [[nodiscard]] constexpr float3 xyz() const { return {x, y, z}; }
+
+    // Member-style API (PascalCase). Implemented directly so the type stays
+    // self-contained; free-function forms also exist.
+    [[nodiscard]] float Len() const { return std::sqrt(x * x + y * y + z * z + w * w); }
+    quat& Normalize() { // in place
+        float inv = 1.0f / Len();
+        x *= inv; y *= inv; z *= inv; w *= inv;
+        return *this;
+    }
+    [[nodiscard]] constexpr quat Conjugate() const { return {-x, -y, -z, w}; }
+    [[nodiscard]] constexpr quat Inverse() const { // conjugate / |q|^2
+        float inv = 1.0f / (x * x + y * y + z * z + w * w);
+        return {-x * inv, -y * inv, -z * inv, w * inv};
+    }
+    [[nodiscard]] float* Ptr() { return &x; }
+    [[nodiscard]] const float* Ptr() const { return &x; }
 };
 
 // Hamilton product: applying (a*b) rotates by b, then a.
@@ -48,6 +64,15 @@ struct quat {
 [[nodiscard]] inline quat normalize(quat q) {
     float inv = 1.0f / length(q);
     return {q.x * inv, q.y * inv, q.z * inv, q.w * inv};
+}
+
+[[nodiscard]] constexpr bool operator==(quat a, quat b) {
+    return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
+}
+constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Hamilton product
+[[nodiscard]] constexpr quat inverse(quat q) {                    // conjugate / |q|^2
+    float inv = 1.0f / dot(q, q);
+    return {-q.x * inv, -q.y * inv, -q.z * inv, q.w * inv};
 }
 
 // ---- interpolation ------------------------------------------------------------

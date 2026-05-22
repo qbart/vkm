@@ -58,6 +58,24 @@ struct matrix {
         return m;
     }
 
+    // Member-style API (PascalCase). Free-function forms also exist.
+    // Column-major storage, so Ptr() is ready to memcpy into a UBO.
+    [[nodiscard]] T* Ptr() { return &cols[0].x; }
+    [[nodiscard]] const T* Ptr() const { return &cols[0].x; }
+    [[nodiscard]] constexpr matrix<T, C, R> Transposed() const { return transpose(*this); }
+    constexpr matrix& Transpose()
+        requires(R == C)
+    { return *this = transpose(*this); } // in place
+    [[nodiscard]] constexpr matrix Inverse() const
+        requires(R == C && R >= 2 && R <= 4)
+    { return inverse(*this); }
+    constexpr matrix& Invert()
+        requires(R == C && R >= 2 && R <= 4)
+    { return *this = inverse(*this); } // in place
+    [[nodiscard]] constexpr T Determinant() const
+        requires(R == C && R >= 2 && R <= 4)
+    { return determinant(*this); }
+
     static constexpr int rows = R;
     static constexpr int columns = C;
     using value_type = T;
@@ -152,6 +170,17 @@ template <class T, int R, int C>
         if (!(a.cols[c] == b.cols[c])) return false;
     return true;
 }
+
+// ---- compound assignment ------------------------------------------------------
+
+template <class T, int R, int C>
+constexpr matrix<T, R, C>& operator+=(matrix<T, R, C>& a, const matrix<T, R, C>& b) { return a = a + b; }
+template <class T, int R, int C>
+constexpr matrix<T, R, C>& operator-=(matrix<T, R, C>& a, const matrix<T, R, C>& b) { return a = a - b; }
+template <class T, int R, int C>
+constexpr matrix<T, R, C>& operator*=(matrix<T, R, C>& a, T s) { return a = a * s; }
+template <class T, int N> // square only: result keeps the same type
+constexpr matrix<T, N, N>& operator*=(matrix<T, N, N>& a, const matrix<T, N, N>& b) { return a = a * b; }
 
 // ---- determinant / inverse (square float/double matrices) --------------------
 // e(r, c) reads the element at row r, column c. inverse() assumes the matrix is
