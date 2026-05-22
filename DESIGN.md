@@ -29,8 +29,12 @@ include/vkm/
 
 ## Conventions
 
-- **Names:** Slang/HLSL. Vectors `floatN`; matrices `floatRxC` (R rows, C cols);
-  `uint` = `uint32_t`. Generic forms `vector<T,N>`, `matrix<T,R,C>` underneath.
+- **Names:** Slang/HLSL is primary. Vectors `floatN`; matrices `floatRxC`
+  (R rows, C cols); `uint` = `uint32_t`. Generic forms `vector<T,N>`,
+  `matrix<T,R,C>` underneath. GLSL-style aliases also provided: `vec/dvec/ivec/
+  uvec/bvec{2,3,4}` and SQUARE `mat{2,3,4}` / `dmat{2,3,4}`. Non-square GLSL mat
+  aliases are intentionally omitted — GLSL names them columns-first, opposite to
+  Slang's rows-first `floatRxC`, so use `floatRxC` for those.
 - **`operator*` on vectors is component-wise** (matches Slang). Matrix product is
   `mul(a,b)` and `operator*`.
 - **Storage:** components are named fields (`x,y,z,w`) — standard-layout, so

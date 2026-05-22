@@ -76,8 +76,16 @@ using double2x2 = matrix<double, 2, 2>;
 using double3x3 = matrix<double, 3, 3>;
 using double4x4 = matrix<double, 4, 4>;
 
-// GLSL-style convenience alias.
+// GLSL-style aliases. SQUARE matrices only: GLSL names non-square matrices
+// columns-first (GLSL mat3x4 = 3 cols x 4 rows) — the opposite of Slang's
+// rows-first floatRxC — so aliasing those would invite mistakes. For non-square,
+// use the floatRxC names directly.
+using mat2 = float2x2;
+using mat3 = float3x3;
 using mat4 = float4x4;
+using dmat2 = double2x2;
+using dmat3 = double3x3;
+using dmat4 = double4x4;
 
 // ---- linear algebra -----------------------------------------------------------
 

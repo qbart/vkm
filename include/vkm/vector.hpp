@@ -111,6 +111,14 @@ using bool2 = vector<bool, 2>;
 using bool3 = vector<bool, 3>;
 using bool4 = vector<bool, 4>;
 
+// ---- GLSL-style aliases (vec / dvec / ivec / uvec / bvec) ---------------------
+
+using vec2 = float2;    using vec3 = float3;    using vec4 = float4;
+using dvec2 = double2;  using dvec3 = double3;  using dvec4 = double4;
+using ivec2 = int2;     using ivec3 = int3;     using ivec4 = int4;
+using uvec2 = uint2;    using uvec3 = uint3;    using uvec4 = uint4;
+using bvec2 = bool2;    using bvec3 = bool3;    using bvec4 = bool4;
+
 // ---- generic component-wise arithmetic ---------------------------------------
 
 #define VKM_VEC_BINOP(op)                                                          \
