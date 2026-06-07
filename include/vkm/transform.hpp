@@ -141,4 +141,73 @@ inline namespace literals {
     return m;
 }
 
+// ---- affine TRS decomposition -------------------------------------------------
+// Splits an affine/projective 4x4 into translation, rotation, scale (+ skew and a
+// perspective row). Orientation is recovered via toQuat once the basis is made
+// orthonormal (Gram-Schmidt). Returns false on a degenerate matrix.
+inline bool decompose(const float4x4& model, float3& scale, quat& orientation, float3& translation,
+                      float3& skew, float4& perspective) {
+    constexpr float eps = 1e-6f;
+    float4x4 local = model;
+
+    if (vkm::abs(local[3][3]) < eps) return false;
+
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r) local[c][r] /= local[3][3];
+
+    // Singularity test on the upper-left 3x3 (perspective partition cleared).
+    float4x4 persp = local;
+    for (int c = 0; c < 3; ++c) persp[c][3] = 0.0f;
+    persp[3][3] = 1.0f;
+    if (vkm::abs(vkm::determinant(persp)) < eps) return false;
+
+    // Isolate the perspective row (last row, column-major).
+    if (vkm::abs(local[0][3]) > eps || vkm::abs(local[1][3]) > eps || vkm::abs(local[2][3]) > eps) {
+        float4 rhs{local[0][3], local[1][3], local[2][3], local[3][3]};
+        perspective = vkm::transpose(vkm::inverse(persp)) * rhs;
+        local[0][3] = 0.0f;
+        local[1][3] = 0.0f;
+        local[2][3] = 0.0f;
+        local[3][3] = 1.0f;
+    } else {
+        perspective = float4{0, 0, 0, 1};
+    }
+
+    translation = float3{local[3][0], local[3][1], local[3][2]};
+    local[3] = float4{0, 0, 0, local[3][3]};
+
+    float3 row[3];
+    for (int i = 0; i < 3; ++i) row[i] = float3{local[i][0], local[i][1], local[i][2]};
+
+    scale.x = vkm::length(row[0]);
+    row[0] = vkm::normalize(row[0]);
+    skew.z = vkm::dot(row[0], row[1]);
+    row[1] = row[1] - row[0] * skew.z;
+
+    scale.y = vkm::length(row[1]);
+    row[1] = vkm::normalize(row[1]);
+    skew.z /= scale.y;
+
+    skew.y = vkm::dot(row[0], row[2]);
+    row[2] = row[2] - row[0] * skew.y;
+    skew.x = vkm::dot(row[1], row[2]);
+    row[2] = row[2] - row[1] * skew.x;
+
+    scale.z = vkm::length(row[2]);
+    row[2] = vkm::normalize(row[2]);
+    skew.y /= scale.z;
+    skew.x /= scale.z;
+
+    // Coordinate-system flip: if the basis is left-handed, negate it and the scale.
+    if (vkm::dot(row[0], vkm::cross(row[1], row[2])) < 0.0f) {
+        for (int i = 0; i < 3; ++i) {
+            scale[i] = -scale[i];
+            row[i] = -row[i];
+        }
+    }
+
+    orientation = vkm::toQuat(float3x3{row[0], row[1], row[2]});
+    return true;
+}
+
 } // namespace vkm

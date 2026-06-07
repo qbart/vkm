@@ -126,6 +126,24 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
     return v + q.w * t + cross(u, t);
 }
 
+// Operator forms of rotate (column-vector convention, v' = q * v):
+//   q * v  rotates v by q;   v * q  rotates v by inverse(q).
+[[nodiscard]] constexpr float3 operator*(quat q, float3 v) { return rotate(q, v); }
+[[nodiscard]] constexpr float3 operator*(float3 v, quat q) { return rotate(inverse(q), v); }
+
+// Intrinsic Tait-Bryan angles (radians) -> quaternion. `euler` = (pitch=x about X,
+// yaw=y about Y, roll=z about Z); the product is qz * qy * qx (X applied first).
+[[nodiscard]] inline quat quatFromEuler(float3 euler) {
+    float3 c{std::cos(euler.x * 0.5f), std::cos(euler.y * 0.5f), std::cos(euler.z * 0.5f)};
+    float3 s{std::sin(euler.x * 0.5f), std::sin(euler.y * 0.5f), std::sin(euler.z * 0.5f)};
+    return quat{
+        s.x * c.y * c.z - c.x * s.y * s.z, // x
+        c.x * s.y * c.z + s.x * c.y * s.z, // y
+        c.x * c.y * s.z - s.x * s.y * c.z, // z
+        c.x * c.y * c.z + s.x * s.y * s.z  // w
+    };
+}
+
 // Unit quaternion -> 3x3 rotation matrix (column-major, v' = R*v).
 [[nodiscard]] constexpr float3x3 toFloat3x3(quat q) {
     float x = q.x, y = q.y, z = q.z, w = q.w;
@@ -170,6 +188,12 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
         return {(m[2][0] + m[0][2]) / s, (m[2][1] + m[1][2]) / s,
                 0.25f * s, (m[0][1] - m[1][0]) / s};
     }
+}
+
+// Rotation part of a 4x4 (upper-left 3x3) -> unit quaternion. Ignores translation,
+// scale and the projective row; the basis is assumed orthonormal.
+[[nodiscard]] inline quat toQuat(const float4x4& m) {
+    return toQuat(float3x3{m[0].xyz(), m[1].xyz(), m[2].xyz()});
 }
 
 // ---- Unity-style queries / construction (radians) -----------------------------

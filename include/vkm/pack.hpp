@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <type_traits>
 
 namespace vkm {
@@ -153,6 +154,63 @@ static_assert(std::is_trivially_copyable_v<short2>);
 [[nodiscard]] inline float3 oct_decode_tangent(short2 packed, float& out_handedness) noexcept {
     out_handedness = (packed.x & 1) ? -1.0f : 1.0f;
     return oct_decode16(packed);
+}
+
+// ---- float16 packing (IEEE-754 half) ------------------------------------------
+// Two float32 <-> a uint32 of two IEEE half-floats (1 sign / 5 exp / 10 mantissa):
+// .x in the low 16 bits, .y in the high 16. Round-to-nearest; subnormals/underflow
+// flush to +/-0, overflow to +/-inf. Distinct from the octahedral/snorm path above:
+// this is a general number format (keeps an exponent), valid for any float pair, not
+// just unit vectors. Mirrors GLSL/Slang packHalf2x16 / unpackHalf2x16.
+
+namespace detail {
+[[nodiscard]] inline std::uint16_t float_to_half(float value) noexcept {
+    std::uint32_t f;
+    std::memcpy(&f, &value, sizeof(f));
+    std::uint32_t sign = (f >> 16) & 0x8000u;
+    std::int32_t exp = static_cast<std::int32_t>((f >> 23) & 0xFFu) - 127 + 15;
+    std::uint32_t mant = f & 0x7FFFFFu;
+
+    if (exp <= 0) return static_cast<std::uint16_t>(sign);            // underflow -> +/-0
+    if (exp >= 31) return static_cast<std::uint16_t>(sign | 0x7C00u); // overflow -> +/-inf
+
+    std::uint16_t half = static_cast<std::uint16_t>(sign | (static_cast<std::uint32_t>(exp) << 10) | (mant >> 13));
+    if (mant & 0x1000u) ++half; // round to nearest
+    return half;
+}
+
+[[nodiscard]] inline float half_to_float(std::uint16_t h) noexcept {
+    std::uint32_t sign = (static_cast<std::uint32_t>(h) & 0x8000u) << 16;
+    std::uint32_t exp = (h >> 10) & 0x1Fu;
+    std::uint32_t mant = h & 0x3FFu;
+    std::uint32_t f;
+    if (exp == 0) {
+        if (mant == 0) {
+            f = sign; // +/-0
+        } else {
+            exp = 1; // normalize a half-subnormal into a float-normal
+            while ((mant & 0x400u) == 0) { mant <<= 1; --exp; }
+            mant &= 0x3FFu;
+            f = sign | ((exp + (127 - 15)) << 23) | (mant << 13);
+        }
+    } else if (exp == 0x1F) {
+        f = sign | 0x7F800000u | (mant << 13); // inf / NaN
+    } else {
+        f = sign | ((exp + (127 - 15)) << 23) | (mant << 13);
+    }
+    float out;
+    std::memcpy(&out, &f, sizeof(out));
+    return out;
+}
+} // namespace detail
+
+[[nodiscard]] inline std::uint32_t packHalf2x16(float2 v) noexcept {
+    return static_cast<std::uint32_t>(detail::float_to_half(v.x)) |
+           (static_cast<std::uint32_t>(detail::float_to_half(v.y)) << 16);
+}
+[[nodiscard]] inline float2 unpackHalf2x16(std::uint32_t p) noexcept {
+    return float2{detail::half_to_float(static_cast<std::uint16_t>(p & 0xFFFFu)),
+                  detail::half_to_float(static_cast<std::uint16_t>(p >> 16))};
 }
 
 // ---- compile-time sanity ------------------------------------------------------
