@@ -197,7 +197,7 @@ using bvec2 = bool2;    using bvec3 = bool3;    using bvec4 = bool4;
 
 // ---- world-space direction constants ------------------------------------------
 // vkm world space is right-handed and Y-up, with forward = -Z: that is the
-// direction a camera built by lookAt faces, and matches GLM/OpenGL world
+// direction a camera built by look_at faces, and matches GLM/OpenGL world
 // conventions. Vulkan's Y-down only lives in clip space (baked into the
 // projection builders), not here. NB: this differs from Unity, which is
 // left-handed with forward = +Z.

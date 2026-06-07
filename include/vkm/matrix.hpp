@@ -279,7 +279,7 @@ template <class T>
 // Normal matrix: transpose(inverse(upper-left 3x3)) of a model/model-view matrix.
 // Use it to transform normals when the model has non-uniform scale.
 template <class T>
-[[nodiscard]] constexpr matrix<T, 3, 3> normalMatrix(const matrix<T, 4, 4>& m) {
+[[nodiscard]] constexpr matrix<T, 3, 3> normal_matrix(const matrix<T, 4, 4>& m) {
     matrix<T, 3, 3> upper{m.cols[0].xyz(), m.cols[1].xyz(), m.cols[2].xyz()};
     return transpose(inverse(upper));
 }

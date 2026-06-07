@@ -161,7 +161,7 @@ static_assert(std::is_trivially_copyable_v<short2>);
 // .x in the low 16 bits, .y in the high 16. Round-to-nearest; subnormals/underflow
 // flush to +/-0, overflow to +/-inf. Distinct from the octahedral/snorm path above:
 // this is a general number format (keeps an exponent), valid for any float pair, not
-// just unit vectors. Mirrors GLSL/Slang packHalf2x16 / unpackHalf2x16.
+// just unit vectors. Mirrors GLSL/Slang pack_half2x16 / unpack_half2x16.
 
 namespace detail {
 [[nodiscard]] inline std::uint16_t float_to_half(float value) noexcept {
@@ -204,11 +204,11 @@ namespace detail {
 }
 } // namespace detail
 
-[[nodiscard]] inline std::uint32_t packHalf2x16(float2 v) noexcept {
+[[nodiscard]] inline std::uint32_t pack_half2x16(float2 v) noexcept {
     return static_cast<std::uint32_t>(detail::float_to_half(v.x)) |
            (static_cast<std::uint32_t>(detail::float_to_half(v.y)) << 16);
 }
-[[nodiscard]] inline float2 unpackHalf2x16(std::uint32_t p) noexcept {
+[[nodiscard]] inline float2 unpack_half2x16(std::uint32_t p) noexcept {
     return float2{detail::half_to_float(static_cast<std::uint16_t>(p & 0xFFFFu)),
                   detail::half_to_float(static_cast<std::uint16_t>(p >> 16))};
 }

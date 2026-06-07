@@ -54,12 +54,12 @@ inline namespace literals {
 }
 
 [[nodiscard]] inline float4x4 rotate(float angle, float3 axis) {
-    return toFloat4x4(quat::fromAxisAngle(axis, angle));
+    return to_float4x4(quat::from_axis_angle(axis, angle));
 }
 
 // Convenience: T * R * S (scale, then rotate, then translate).
-[[nodiscard]] inline float4x4 composeTRS(float3 t, quat r, float3 s) {
-    return translate(t) * toFloat4x4(r) * scale(s);
+[[nodiscard]] inline float4x4 compose_trs(float3 t, quat r, float3 s) {
+    return translate(t) * to_float4x4(r) * scale(s);
 }
 
 // ---- vector rotation helper ---------------------------------------------------
@@ -67,12 +67,12 @@ inline namespace literals {
 // Rotate `current` toward `target`: its direction turns by at most
 // max_radians_delta, and its length moves toward |target| by at most
 // max_magnitude_delta. Both are clamped against overshoot. (Unity RotateTowards.)
-[[nodiscard]] inline float3 rotateTowards(float3 current, float3 target,
+[[nodiscard]] inline float3 rotate_towards(float3 current, float3 target,
                                            float max_radians_delta, float max_magnitude_delta) {
     constexpr float eps = 1e-20f;
     float len_c = length(current);
     float len_t = length(target);
-    float new_len = moveTowards(len_c, len_t, max_magnitude_delta); // step the magnitude
+    float new_len = move_towards(len_c, len_t, max_magnitude_delta); // step the magnitude
 
     // A (near-)zero endpoint has no direction to rotate; keep whatever axis exists.
     if (len_c < eps || len_t < eps) {
@@ -97,13 +97,13 @@ inline namespace literals {
     } else {
         axis = axis / axis_len;
     }
-    return rotate(quat::fromAxisAngle(axis, turn), dc) * new_len;
+    return rotate(quat::from_axis_angle(axis, turn), dc) * new_len;
 }
 
 // ---- view ---------------------------------------------------------------------
 
 // Right-handed look-at: camera at `eye` looking toward `center`, world up `up`.
-[[nodiscard]] inline float4x4 lookAt(float3 eye, float3 center, float3 up) {
+[[nodiscard]] inline float4x4 look_at(float3 eye, float3 center, float3 up) {
     float3 f = normalize(center - eye); // forward
     float3 s = normalize(cross(f, up)); // right
     float3 u = cross(s, f);             // recomputed up
@@ -143,7 +143,7 @@ inline namespace literals {
 
 // ---- affine TRS decomposition -------------------------------------------------
 // Splits an affine/projective 4x4 into translation, rotation, scale (+ skew and a
-// perspective row). Orientation is recovered via toQuat once the basis is made
+// perspective row). Orientation is recovered via to_quat once the basis is made
 // orthonormal (Gram-Schmidt). Returns false on a degenerate matrix.
 inline bool decompose(const float4x4& model, float3& scale, quat& orientation, float3& translation,
                       float3& skew, float4& perspective) {
@@ -206,7 +206,7 @@ inline bool decompose(const float4x4& model, float3& scale, quat& orientation, f
         }
     }
 
-    orientation = vkm::toQuat(float3x3{row[0], row[1], row[2]});
+    orientation = vkm::to_quat(float3x3{row[0], row[1], row[2]});
     return true;
 }
 

@@ -62,7 +62,7 @@ int main() {
     CHECK((b == float4{6, 6, 6, 6}));
 
     // ---- quat ----
-    quat q = quat::fromAxisAngle(float3{0, 0, 1}, rad(90));
+    quat q = quat::from_axis_angle(float3{0, 0, 1}, rad(90));
     CHECK(near(q.length(), 1.0f));
     // q * inverse(q) is the identity rotation.
     CHECK(near(rotate(q * q.inverse(), float3{1, 0, 0}), float3{1, 0, 0}));
@@ -74,7 +74,7 @@ int main() {
     CHECK(near(rotate(acc, float3{1, 0, 0}), rotate(q, float3{1, 0, 0})));
 
     // ---- matrix ----
-    float4x4 M = composeTRS(float3{1, 2, 3}, q, float3{2, 2, 2});
+    float4x4 M = compose_trs(float3{1, 2, 3}, q, float3{2, 2, 2});
     CHECK(near(M.determinant(), determinant(M)));
     CHECK(near(M * M.inverse(), float4x4::identity()));
     CHECK(M.transposed().transposed() == M); // double transpose round-trips

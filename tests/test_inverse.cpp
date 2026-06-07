@@ -57,20 +57,20 @@ int main() {
     CHECK(near(inverse(b) * b, float3x3::identity()));
 
     // 4x4 inverse of a full TRS round-trips.
-    float4x4 M = composeTRS(float3{3, -2, 5},
-                             quat::fromAxisAngle(float3{0.3f, 1, 0.5f}, rad(40)),
+    float4x4 M = compose_trs(float3{3, -2, 5},
+                             quat::from_axis_angle(float3{0.3f, 1, 0.5f}, rad(40)),
                              float3{2, 0.5f, 1.5f});
     CHECK(near(inverse(M) * M, float4x4::identity()));
     CHECK(near(M * inverse(M), float4x4::identity()));
 
     // inverse of a view matrix recovers a point (un-project the camera-space origin).
-    float4x4 V = lookAt(float3{1, 2, 3}, float3{0, 0, 0}, float3{0, 1, 0});
+    float4x4 V = look_at(float3{1, 2, 3}, float3{0, 0, 0}, float3{0, 1, 0});
     CHECK(near(inverse(V) * float4{0, 0, 0, 1}, float4{1, 2, 3, 1})); // camera-space origin -> eye
 
     // normal matrix of a pure rotation equals that rotation's 3x3 (orthonormal).
-    quat r = quat::fromAxisAngle(float3{0, 1, 0}, rad(33));
-    float4x4 R = toFloat4x4(r);
-    CHECK(near(normalMatrix(R), toFloat3x3(r)));
+    quat r = quat::from_axis_angle(float3{0, 1, 0}, rad(33));
+    float4x4 R = to_float4x4(r);
+    CHECK(near(normal_matrix(R), to_float3x3(r)));
 
     if (g_failures == 0) {
         std::puts("vkm inverse tests passed");

@@ -31,18 +31,18 @@ int main() {
 
     // ---- 3. Rotate a vector by a 30-degree quaternion about +Z --------------
     std::puts("\n[quaternion rotation]");
-    quat q = quat::fromAxisAngle(float3{0, 0, 1}, rad(30.0f)); // axis, angle (radians)
+    quat q = quat::from_axis_angle(float3{0, 0, 1}, rad(30.0f)); // axis, angle (radians)
     float3 v{1, 0, 0};
     print("rotate(q, v)   [fast path]", rotate(q, v));               // expect (cos30, sin30, 0)
     // The same rotation applied via the matrix form (w=0 -> direction, not point):
-    float3 via_matrix = (toFloat4x4(q) * float4{v, 0.0f}).xyz();
-    print("via toFloat4x4(q) * v", via_matrix);
+    float3 via_matrix = (to_float4x4(q) * float4{v, 0.0f}).xyz();
+    print("via to_float4x4(q) * v", via_matrix);
 
     // ---- 4. MVP matrix multiplication ---------------------------------------
     std::puts("\n[MVP]");
     // model: scale 1, rotate q (30 deg / Z), translate to (0,1,0)  -> T * R * S
-    float4x4 model = composeTRS(/*t*/ float3{0, 1, 0}, /*r*/ q, /*s*/ float3{1, 1, 1});
-    float4x4 view = lookAt(/*eye*/ float3{0, 0, 5}, /*center*/ float3{0, 0, 0}, /*up*/ float3{0, 1, 0});
+    float4x4 model = compose_trs(/*t*/ float3{0, 1, 0}, /*r*/ q, /*s*/ float3{1, 1, 1});
+    float4x4 view = look_at(/*eye*/ float3{0, 0, 5}, /*center*/ float3{0, 0, 0}, /*up*/ float3{0, 1, 0});
     float4x4 proj = perspective(rad(60.0f), 16.0f / 9.0f, 0.1f, 100.0f); // Vulkan clip
 
     float4x4 mvp = proj * view * model; // compose right-to-left, then M * v below
