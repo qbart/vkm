@@ -165,6 +165,9 @@ constexpr quat& operator*=(quat& a, quat b) { return a = a * b; } // in-place Ha
                     float4{0, 0, 0, 1}};
 }
 
+// Alias: the 4x4 is the default matrix form of a quaternion.
+[[nodiscard]] constexpr float4x4 to_mat(quat q) { return to_float4x4(q); }
+
 // Rotation matrix -> unit quaternion (inverse of to_float3x3). Shepperd's method:
 // build from whichever diagonal term is largest, for numerical stability.
 [[nodiscard]] inline quat to_quat(float3x3 m) {
