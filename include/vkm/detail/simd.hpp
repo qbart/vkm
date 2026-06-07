@@ -7,7 +7,7 @@
 // at once. We provide three backends, selected at compile time:
 //
 //   * NEON  — AArch64 (Apple Silicon, ARM servers/phones)
-//   * SSE   — x86-64 (SSE3 for the horizontal add)
+//   * SSE   — x86-64 (SSE2 baseline; horizontal add via shuffles)
 //   * scalar— portable fallback so the library always builds
 //
 // The public surface is intentionally tiny: a `f32x4` register type plus the
@@ -63,11 +63,14 @@ inline void store4(float* p, f32x4 v) noexcept { _mm_storeu_ps(p, v); }
 [[nodiscard]] inline f32x4 mul(f32x4 a, f32x4 b) noexcept { return _mm_mul_ps(a, b); }
 [[nodiscard]] inline f32x4 div(f32x4 a, f32x4 b) noexcept { return _mm_div_ps(a, b); }
 [[nodiscard]] inline f32x4 neg(f32x4 a) noexcept { return _mm_sub_ps(_mm_setzero_ps(), a); }
-// SSE3 horizontal add: two haddps fold 4 lanes into lane 0.
+// Horizontal add, SSE2-only (the backend is gated on __SSE2__, so we must not
+// reach for SSE3's haddps here): shuffle+add the two halves down into lane 0.
 [[nodiscard]] inline float hsum(f32x4 v) noexcept {
-    __m128 s = _mm_hadd_ps(v, v);
-    s = _mm_hadd_ps(s, s);
-    return _mm_cvtss_f32(s);
+    __m128 shuf = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1)); // [b,a,d,c]
+    __m128 sums = _mm_add_ps(v, shuf);                           // a+b, b+a, c+d, d+c
+    shuf = _mm_movehl_ps(shuf, sums);                            // c+d into low lane
+    sums = _mm_add_ss(sums, shuf);                               // (a+b)+(c+d)
+    return _mm_cvtss_f32(sums);
 }
 
 #else // VKM_SIMD_SCALAR
