@@ -131,6 +131,12 @@ template <class T, int N>
     return r;
 }
 
+// 1 if a and b are within epsilon of each other, else 0 (HLSL-style mask).
+template <class T>
+[[nodiscard]] constexpr T close_to(T a, T b, T epsilon) {
+    return abs(a - b) <= epsilon ? T{1} : T{0};
+}
+
 // ---- geometric ----------------------------------------------------------------
 
 // HLSL reflect: incident i about normal n -> i - 2*dot(i,n)*n.
@@ -144,6 +150,44 @@ template <class T, int N>
 template <class T, int N>
 [[nodiscard]] constexpr T distance2(vector<T, N> a, vector<T, N> b) {
     return length2(a - b);
+}
+
+// A ray as origin + direction. `direction` need not be unit length; the distance
+// reported by ray_triangle_intersect is then measured in units of |direction|.
+struct ray {
+    float3 origin;
+    float3 direction;
+};
+
+// Moller-Trumbore ray/triangle intersection. On a front- or back-facing hit,
+// writes the ray-parameter t to `distance` and returns true; otherwise returns
+// false (ray parallel to, or pointing away from, the triangle). The hit point is
+// ray.origin + t * ray.direction.
+[[nodiscard]] inline bool ray_triangle_intersect(const ray& r, float3 a, float3 b, float3 c,
+                                                 float& distance) {
+    constexpr float epsilon = 1e-7f;
+    float3 edge1 = b - a;
+    float3 edge2 = c - a;
+    float3 h = cross(r.direction, edge2);
+    float det = dot(edge1, h);
+
+    if (det > -epsilon && det < epsilon) return false; // ray parallel to triangle
+
+    float inv_det = 1.0f / det;
+    float3 s = r.origin - a;
+    float u = dot(s, h) * inv_det;
+    if (u < 0.0f || u > 1.0f) return false;
+
+    float3 q = cross(s, edge1);
+    float v = dot(r.direction, q) * inv_det;
+    if (v < 0.0f || u + v > 1.0f) return false;
+
+    float t = dot(edge2, q) * inv_det;
+    if (t > epsilon) {
+        distance = t;
+        return true;
+    }
+    return false; // line intersection, but behind the ray origin
 }
 
 // ---- projection / angle / move-towards ----------------------------------------

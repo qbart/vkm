@@ -36,6 +36,12 @@ inline namespace literals {
 [[nodiscard]] constexpr float operator""_rad(unsigned long long r) { return static_cast<float>(r); }
 } // namespace literals
 
+// Euler angles in DEGREES -> quaternion. Convenience over quat_from_euler, which
+// takes radians; `angles` = (pitch about X, yaw about Y, roll about Z).
+[[nodiscard]] inline quat quat_angles(float3 angles) {
+    return quat_from_euler(float3{rad(angles.x), rad(angles.y), rad(angles.z)});
+}
+
 // ---- affine builders ----------------------------------------------------------
 
 // Translation lives in the last column (column-major).
@@ -55,6 +61,11 @@ inline namespace literals {
 
 [[nodiscard]] inline float4x4 rotate(float angle, float3 axis) {
     return to_float4x4(quat::from_axis_angle(axis, angle));
+}
+
+// Post-rotate `q` by `deg` degrees about `axis` (defaults to world up).
+[[nodiscard]] inline quat rotate_deg(quat q, float deg, float3 axis = up) {
+    return q * quat::from_axis_angle(axis, rad(deg));
 }
 
 // Convenience: T * R * S (scale, then rotate, then translate).
