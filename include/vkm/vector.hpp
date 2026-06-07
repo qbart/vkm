@@ -207,6 +207,7 @@ inline constexpr float3 up{0, 1, 0};
 inline constexpr float3 down{0, -1, 0};
 inline constexpr float3 forward{0, 0, -1};
 inline constexpr float3 back{0, 0, 1};
+inline constexpr float3 zero{0, 0, 0};
 
 // ---- generic component-wise arithmetic ---------------------------------------
 
