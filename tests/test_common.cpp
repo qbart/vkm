@@ -56,6 +56,27 @@ int main() {
 
     CHECK(near(smoothstep(0.0f, 1.0f, 0.5f), 0.5f));
 
+    // Trig family — no need for std::.
+    CHECK(near(sin(0.0f), 0.0f) && near(cos(0.0f), 1.0f));
+    CHECK(near(asin(1.0f), 1.57079633f));
+    CHECK(near(acos(1.0f), 0.0f));
+    CHECK(near(atan2(1.0f, 1.0f), 0.78539816f));
+    float s, c;
+    sincos(0.0f, s, c);
+    CHECK(near(s, 0.0f) && near(c, 1.0f));
+    float3 sv = sin(float3{0, 0, 0});
+    CHECK(near(sv.x, 0) && near(sv.y, 0) && near(sv.z, 0));
+
+    // Misc.
+    CHECK(near(fmod(5.5f, 2.0f), 1.5f));
+    CHECK(near(exp2(3.0f), 8.0f) && near(log2(8.0f), 3.0f));
+
+    // Game-loop helpers.
+    CHECK(near(repeat(7.0f, 3.0f), 1.0f));
+    CHECK(near(repeat(-1.0f, 3.0f), 2.0f));
+    CHECK(near(ping_pong(4.0f, 3.0f), 2.0f));
+    CHECK(near(lerp_angle(0.0f, 6.0f, 0.5f), -0.14159265f)); // crosses the seam
+
     if (g_failures == 0) {
         std::puts("vkm common tests passed");
         return 0;

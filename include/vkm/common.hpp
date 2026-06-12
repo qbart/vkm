@@ -251,10 +251,39 @@ VKM_UNARY_STD(trunc, std::trunc)
 VKM_UNARY_STD(sqrt, std::sqrt)
 VKM_UNARY_STD(exp, std::exp)
 VKM_UNARY_STD(log, std::log)
+VKM_UNARY_STD(exp2, std::exp2)
+VKM_UNARY_STD(log2, std::log2)
 VKM_UNARY_STD(sin, std::sin)
 VKM_UNARY_STD(cos, std::cos)
 VKM_UNARY_STD(tan, std::tan)
+VKM_UNARY_STD(asin, std::asin)
+VKM_UNARY_STD(acos, std::acos)
+VKM_UNARY_STD(atan, std::atan)
+VKM_UNARY_STD(sinh, std::sinh)
+VKM_UNARY_STD(cosh, std::cosh)
+VKM_UNARY_STD(tanh, std::tanh)
 #undef VKM_UNARY_STD
+
+// ---- binary <cmath> wrappers (runtime) ----------------------------------------
+
+#define VKM_BINARY_STD(name, fn)                                                   \
+    template <std::floating_point T>                                               \
+    [[nodiscard]] inline T name(T a, T b) { return fn(a, b); }                      \
+    template <std::floating_point T, int N>                                        \
+    [[nodiscard]] inline vector<T, N> name(vector<T, N> a, vector<T, N> b) {        \
+        vector<T, N> r{};                                                          \
+        for (int i = 0; i < N; ++i) r[i] = fn(a[i], b[i]);                         \
+        return r;                                                                  \
+    }
+// atan2(y, x): full-circle angle in radians, range (-pi, pi].
+VKM_BINARY_STD(atan2, std::atan2)
+// fmod(a, b): floating-point remainder, sign follows `a` (like HLSL `fmod`).
+VKM_BINARY_STD(fmod, std::fmod)
+#undef VKM_BINARY_STD
+
+// Both sine and cosine of x in one call (handy for building rotations).
+template <std::floating_point T>
+inline void sincos(T x, T& s, T& c) { s = std::sin(x); c = std::cos(x); }
 
 template <std::floating_point T>
 [[nodiscard]] inline T frac(T x) { return x - std::floor(x); }
@@ -281,6 +310,32 @@ template <std::floating_point T, int N>
     vector<T, N> r{};
     for (int i = 0; i < N; ++i) r[i] = std::pow(a[i], b[i]);
     return r;
+}
+
+// ---- game-loop helpers --------------------------------------------------------
+
+// Wrap x into [0, length) — like a positive fmod (Unity Mathf.Repeat). Useful
+// for looping animation time or wrapping a value around a range.
+template <std::floating_point T>
+[[nodiscard]] inline T repeat(T x, T length) {
+    return clamp(x - std::floor(x / length) * length, T{0}, length);
+}
+
+// Bounce x back and forth in [0, length] at unit speed (Unity Mathf.PingPong).
+template <std::floating_point T>
+[[nodiscard]] inline T ping_pong(T x, T length) {
+    T t = repeat(x, length * T{2});
+    return length - abs(t - length);
+}
+
+// Shortest-path angular lerp, in RADIANS. Interpolates the wrapped difference so
+// it crosses the +-pi seam correctly (Unity Mathf.LerpAngle, but radians).
+template <std::floating_point T>
+[[nodiscard]] inline T lerp_angle(T a, T b, T t) {
+    constexpr T two_pi = T{6.283185307179586476925286766559};
+    T delta = repeat(b - a, two_pi);
+    if (delta > two_pi / T{2}) delta -= two_pi;
+    return a + delta * t;
 }
 
 } // namespace vkm
